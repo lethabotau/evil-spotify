@@ -10,6 +10,8 @@ export const OAUTH_STATE_KEY = 'spotify_oauth_state'
 export const SPOTIFY_SCOPES = [
   'user-read-private',
   'user-read-email',
+  'playlist-read-private',
+  'playlist-read-collaborative',
 ].join(' ')
 
 export function getAccessToken(): string | null {
