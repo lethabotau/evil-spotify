@@ -107,10 +107,13 @@ export interface SpotifyPlaylistOwner {
   display_name: string | null
 }
 
-export interface SpotifyPlaylistTracksRef {
+export interface SpotifyPlaylistItemsRef {
   href: string
   total: number
 }
+
+/** @deprecated Spotify renamed this to `items` (Feb 2026) */
+export type SpotifyPlaylistTracksRef = SpotifyPlaylistItemsRef
 
 export interface SpotifyPlaylist {
   collaborative: boolean
@@ -124,9 +127,15 @@ export interface SpotifyPlaylist {
   owner: SpotifyPlaylistOwner
   public: boolean | null
   snapshot_id: string
-  tracks: SpotifyPlaylistTracksRef
+  items?: SpotifyPlaylistItemsRef
+  /** @deprecated Use `items` */
+  tracks?: SpotifyPlaylistItemsRef
   type: 'playlist'
   uri: string
+}
+
+export function getPlaylistItemCount(playlist: SpotifyPlaylist): number {
+  return playlist.items?.total ?? playlist.tracks?.total ?? 0
 }
 
 export interface SpotifyPlayContext {
@@ -171,6 +180,36 @@ export interface SpotifyPlaylistTrackItem {
 
 export type SpotifyPlaylistTracksResponse = SpotifyPaging<SpotifyPlaylistTrackItem>
 
+/** Raw shape from GET /playlists/{id}/items (Feb 2026+) */
+interface SpotifyPlaylistItemApi {
+  added_at: string
+  added_by: SpotifyPlaylistOwner
+  is_local: boolean
+  item?: SpotifyTrack | null
+  /** Present on deprecated /tracks responses */
+  track?: SpotifyTrack | null
+}
+
+function normalizePlaylistItem(raw: SpotifyPlaylistItemApi): SpotifyPlaylistTrackItem {
+  return {
+    added_at: raw.added_at,
+    added_by: raw.added_by,
+    is_local: raw.is_local,
+    track: raw.item ?? raw.track ?? null,
+  }
+}
+
+export function getSpotifyErrorMessage(err: unknown): string {
+  if (!axios.isAxiosError(err)) {
+    return err instanceof Error ? err.message : 'Request failed'
+  }
+  if (err.response?.status === 403) {
+    return 'Tracks are only available for playlists you own or collaborate on. Spotify no longer allows loading tracks for other users’ playlists.'
+  }
+  const data = err.response?.data as { error?: { message?: string } } | undefined
+  return data?.error?.message ?? err.message
+}
+
 // --- API ---
 
 export async function getCurrentUserProfile(): Promise<SpotifyUser> {
@@ -202,13 +241,39 @@ export async function getLikedSongs(limit = 20): Promise<SpotifySavedTracksRespo
   return data
 }
 
+export async function getPlaylist(playlistId: string): Promise<SpotifyPlaylist> {
+  const { data } = await spotify.get<SpotifyPlaylist>(`/playlists/${playlistId}`)
+  return data
+}
+
 export async function getPlaylistTracks(
   playlistId: string,
-  limit = 100,
+  limit = 50,
+  offset = 0,
 ): Promise<SpotifyPlaylistTracksResponse> {
-  const { data } = await spotify.get<SpotifyPlaylistTracksResponse>(
-    `/playlists/${playlistId}/tracks`,
-    { params: { limit } },
+  const { data } = await spotify.get<SpotifyPaging<SpotifyPlaylistItemApi>>(
+    `/playlists/${playlistId}/items`,
+    { params: { limit, offset, additional_types: 'track' } },
   )
-  return data
+  return {
+    ...data,
+    items: data.items.map(normalizePlaylistItem),
+  }
+}
+
+export async function getAllPlaylistTracks(
+  playlistId: string,
+): Promise<SpotifyPlaylistTrackItem[]> {
+  const items: SpotifyPlaylistTrackItem[] = []
+  const limit = 50
+  let offset = 0
+
+  while (true) {
+    const page = await getPlaylistTracks(playlistId, limit, offset)
+    items.push(...page.items)
+    if (!page.next) break
+    offset += limit
+  }
+
+  return items
 }

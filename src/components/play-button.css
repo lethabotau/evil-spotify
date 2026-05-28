@@ -39,6 +39,13 @@
   margin-left: 2px;
 }
 
+/* Always visible when used outside card hover contexts */
+.playlist-toolbar .play-button,
+.play-button--visible {
+  opacity: 1;
+  transform: none;
+}
+
 .play-button:hover {
   background-color: var(--accent-hover);
   transform: scale(1.04);
