@@ -1,0 +1,57 @@
+.playlist-scroll-card {
+  flex: 0 0 auto;
+  width: 180px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.playlist-scroll-card__media {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.playlist-scroll-card__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.playlist-scroll-card__img--placeholder {
+  background-color: var(--bg-card);
+}
+
+.playlist-scroll-card__media .play-button {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+}
+
+.playlist-scroll-card:hover .play-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.playlist-scroll-card__name {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-heading);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-scroll-card__desc {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-normal);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

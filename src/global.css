@@ -1,7 +1,8 @@
 /*
  * Spotify dark theme colour system — accent green #1DB954 → #E31D1D
- * Font stack matches open.spotify.com (Circular with system fallbacks)
  */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
 
 :root {
   --bg-base: #121212;
@@ -23,11 +24,13 @@
   --border-subtle: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.2);
 
-  --font-family: Circular, 'Circular Spotify Text', 'Helvetica Neue', Helvetica, Arial,
-    sans-serif;
+  --font-family: 'Circular Std', 'Inter', sans-serif;
   --font-weight-normal: 400;
+  --font-weight-medium: 500;
   --font-weight-bold: 700;
   --font-weight-black: 900;
+  --letter-spacing-tight: -0.04em;
+  --letter-spacing-heading: -0.02em;
 
   --transition-base: 0.2s ease;
 }
@@ -70,6 +73,7 @@ h5,
 h6 {
   color: var(--text-primary);
   font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-heading);
   margin: 0;
 }
 

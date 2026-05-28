@@ -1,0 +1,53 @@
+.home-grid-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 48px;
+  background-color: var(--bg-card);
+  border-radius: 4px;
+  overflow: hidden;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color var(--transition-base);
+}
+
+.home-grid-card:hover {
+  background-color: var(--bg-tinted);
+}
+
+.home-grid-card:hover .play-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.home-grid-card__img {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.home-grid-card__img--placeholder {
+  display: block;
+  background-color: var(--bg-highlight);
+}
+
+.home-grid-card__name {
+  flex: 1;
+  min-width: 0;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-grid-card .play-button {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  margin-top: -20px;
+}
