@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useCorruptedTrackPlay } from '../hooks/useCorruptedTrackPlay'
 import { CorruptedText } from '../components/CorruptedText'
+import { useCorruption } from '../context/CorruptionContext'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import '../components/play-button.css'
 import {
@@ -21,6 +22,7 @@ import './playlist.css'
 
 export function Album() {
   const { id } = useParams<{ id: string }>()
+  const { isCorrupted, startCorruption, requestPlaybackRestart } = useCorruption()
   const { playlistImage, heroTitle, artistLabel } = useCorruptedDisplay()
   const [album, setAlbum] = useState<SpotifyAlbum | null>(null)
   const [tracks, setTracks] = useState<SpotifyAlbumTrackSimplified[]>([])
@@ -95,6 +97,13 @@ export function Album() {
   const year = releaseYear(album.release_date)
   const typeLabel = album.album_type
   const trackCount = album.total_tracks
+  const handleHeroPlay = () => {
+    if (!isCorrupted) {
+      startCorruption()
+      return
+    }
+    requestPlaybackRestart()
+  }
 
   return (
     <div className="album-page playlist-page">
@@ -149,7 +158,7 @@ export function Album() {
           type="button"
           className="play-button play-button--lg play-button--visible"
           aria-label={`Play ${displayTitle}`}
-          disabled
+          onClick={handleHeroPlay}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M8 5.14v14l11-7-11-7z" />

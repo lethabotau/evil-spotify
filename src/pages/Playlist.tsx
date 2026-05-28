@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useCorruptedTrackPlay } from '../hooks/useCorruptedTrackPlay'
 import { CorruptedText } from '../components/CorruptedText'
+import { useCorruption } from '../context/CorruptionContext'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import '../components/play-button.css'
 import { formatArtistNames, formatTotalDuration } from '../utils/format'
@@ -16,13 +17,9 @@ import {
 } from '../utils/spotify'
 import './playlist.css'
 
-function stripHtml(html: string): string {
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  return doc.body.textContent ?? html
-}
-
 export function Playlist() {
   const { id } = useParams<{ id: string }>()
+  const { isCorrupted, startCorruption, requestPlaybackRestart } = useCorruption()
   const { playlistImage, heroTitle } = useCorruptedDisplay()
   const [playlist, setPlaylist] = useState<SpotifyPlaylist | null>(null)
   const [tracks, setTracks] = useState<SpotifyPlaylistTrackItem[]>([])
@@ -95,10 +92,14 @@ export function Playlist() {
   const coverUrl = playlistImage(playlist.images[0]?.url)
   const ownerName = playlist.owner.display_name ?? 'Unknown'
   const visibility = playlist.public === false ? 'Private playlist' : 'Public playlist'
-  const description = playlist.description
-    ? stripHtml(playlist.description)
-    : null
   const trackCount = getPlaylistItemCount(playlist)
+  const handleHeroPlay = () => {
+    if (!isCorrupted) {
+      startCorruption()
+      return
+    }
+    requestPlaybackRestart()
+  }
 
   return (
     <div className="playlist-page">
@@ -140,7 +141,6 @@ export function Playlist() {
                 </>
               )}
             </div>
-            {description && <p className="playlist-hero__description">{description}</p>}
           </div>
         </div>
       </header>
@@ -150,7 +150,7 @@ export function Playlist() {
           type="button"
           className="play-button play-button--lg play-button--visible"
           aria-label={`Play ${playlist.name}`}
-          disabled
+          onClick={handleHeroPlay}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M8 5.14v14l11-7-11-7z" />

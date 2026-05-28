@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import serenaVideo from '../assets/serena.mp4'
+import { useCorruptionGlitchStyles } from './CorruptionEffects'
 import { useCorruption } from '../context/CorruptionContext'
+import { useCorruptionGlitchParams } from '../hooks/useCorruptionGlitchParams'
+import './corruption-effects.css'
 import './floating-video.css'
 
 const VIDEO_WIDTH = 300
@@ -35,6 +38,8 @@ function createInstances(count: number, previous: VideoInstance[] = []): VideoIn
 
 export function FloatingVideoPlayer() {
   const { isCorrupted } = useCorruption()
+  const glitchStyles = useCorruptionGlitchStyles()
+  const glitchParams = useCorruptionGlitchParams()
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map())
   const positionTimersRef = useRef<Map<number, number>>(new Map())
   const [active, setActive] = useState(false)
@@ -154,7 +159,17 @@ export function FloatingVideoPlayer() {
   if (!active || instances.length === 0) return null
 
   return (
-    <div className="floating-video-layer" aria-hidden>
+    <div
+      className={[
+        'floating-video-layer',
+        'corruption-glitch-surface',
+        glitchParams.textMeltProgress > 0 && 'floating-video-layer--text-melt',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={glitchStyles}
+      aria-hidden
+    >
       {instances.map((instance) => (
         <div
           key={instance.id}

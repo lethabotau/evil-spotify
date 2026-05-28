@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import logo from '../assets/logo.svg'
 import { redirectToSpotifyLogin } from '../utils/spotifyAuth'
+import './login.css'
 
 export function Login() {
   const [error, setError] = useState<string | null>(null)
@@ -17,12 +19,17 @@ export function Login() {
   }
 
   return (
-    <section className="login">
-      <h1>Log in</h1>
-      <button type="button" onClick={handleLogin} disabled={loading}>
+    <main className="login">
+      <img src={logo} alt="Evil Spotify" className="login__logo" width={64} height={64} />
+      <button
+        type="button"
+        className="login__button"
+        onClick={handleLogin}
+        disabled={loading}
+      >
         {loading ? 'Redirecting…' : 'Log in with Spotify'}
       </button>
-      {error && <p className="error">{error}</p>}
-    </section>
+      {error && <p className="login__error">{error}</p>}
+    </main>
   )
 }

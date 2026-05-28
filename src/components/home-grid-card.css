@@ -4,7 +4,7 @@
   align-items: center;
   gap: 0;
   min-height: 48px;
-  background-color: var(--bg-card);
+  background-color: rgba(40, 40, 40, 0.45);
   border-radius: 4px;
   overflow: hidden;
   color: var(--text-primary);
@@ -13,12 +13,7 @@
 }
 
 .home-grid-card:hover {
-  background-color: var(--bg-tinted);
-}
-
-.home-grid-card:hover .play-button {
-  opacity: 1;
-  transform: translateY(0);
+  background-color: rgba(62, 62, 62, 0.55);
 }
 
 .home-grid-card__img {
@@ -43,11 +38,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.home-grid-card .play-button {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  margin-top: -20px;
 }

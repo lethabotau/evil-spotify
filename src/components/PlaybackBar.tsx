@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import corruptedAudio from '../assets/slimey_modded.mp3'
 import {
   CORRUPTED_TRACK_DURATION,
@@ -18,13 +18,14 @@ function formatTime(seconds: number): string {
 
 export function PlaybackBar() {
   const { isCorrupted, flashbangActive, playbackRestartKey, maxVolume } = useCorruption()
-  const corruptionPlayback = isCorrupted || flashbangActive
   const { playlistImage, trackName, artistLabel } = useCorruptedDisplay()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [recentTrack, setRecentTrack] = useState<SpotifyTrack | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
+  const [spotifyDuration, setSpotifyDuration] = useState(0)
+  const [volume, setVolume] = useState(0.7)
 
   useEffect(() => {
     if (!getAccessToken()) return
@@ -37,7 +38,7 @@ export function PlaybackBar() {
         const track = data.items[0]?.track ?? null
         setRecentTrack(track)
         if (track) {
-          setDuration(track.duration_ms / 1000)
+          setSpotifyDuration(track.duration_ms / 1000)
         }
       })
       .catch(() => {})
@@ -47,63 +48,89 @@ export function PlaybackBar() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!flashbangActive) return
+  const restartTrack = useCallback((autoplay = true) => {
     const audio = audioRef.current
     if (!audio) return
     audio.currentTime = 0
     setCurrentTime(0)
-    audio.play().catch(() => {})
-  }, [flashbangActive])
+    if (autoplay) {
+      audio.play().catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!flashbangActive) return
+    restartTrack(true)
+  }, [flashbangActive, restartTrack])
 
   useEffect(() => {
     if (!isCorrupted || playbackRestartKey === 0) return
-    const audio = audioRef.current
-    if (!audio) return
-    audio.currentTime = 0
-    setCurrentTime(0)
-    audio.play().catch(() => {})
-  }, [playbackRestartKey, isCorrupted])
+    restartTrack(true)
+  }, [playbackRestartKey, isCorrupted, restartTrack])
 
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !isCorrupted) return
-    audio.volume = maxVolume ? 1 : 0.85
-  }, [isCorrupted, maxVolume])
+  const effectiveVolume = (() => {
+    if (maxVolume) return 1
+    if (isCorrupted && volume > 0.85) return 0.85
+    return volume
+  })()
 
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
+    audio.volume = effectiveVolume
+  }, [effectiveVolume])
 
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const onLoadedMetadata = () => setDuration(audio.duration)
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const syncDuration = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setAudioDuration(audio.duration)
+      }
+    }
+
     const onEnded = () => {
       setIsPlaying(false)
       setCurrentTime(0)
+      audio.currentTime = 0
     }
     const onPlay = () => setIsPlaying(true)
     const onPause = () => setIsPlaying(false)
 
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('loadedmetadata', onLoadedMetadata)
-    audio.addEventListener('durationchange', onLoadedMetadata)
+    syncDuration()
+    audio.addEventListener('loadedmetadata', syncDuration)
+    audio.addEventListener('durationchange', syncDuration)
     audio.addEventListener('ended', onEnded)
     audio.addEventListener('play', onPlay)
     audio.addEventListener('pause', onPause)
 
     return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
-      audio.removeEventListener('durationchange', onLoadedMetadata)
+      audio.removeEventListener('loadedmetadata', syncDuration)
+      audio.removeEventListener('durationchange', syncDuration)
       audio.removeEventListener('ended', onEnded)
       audio.removeEventListener('play', onPlay)
       audio.removeEventListener('pause', onPause)
     }
   }, [])
 
-  function handlePlayPause() {
-    if (!corruptionPlayback) return
+  useEffect(() => {
+    if (!isPlaying) return
 
+    const audio = audioRef.current
+    if (!audio) return
+
+    let frameId = 0
+    const tick = () => {
+      setCurrentTime(audio.currentTime)
+      frameId = requestAnimationFrame(tick)
+    }
+
+    frameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameId)
+  }, [isPlaying])
+
+  function handlePlayPause() {
     const audio = audioRef.current
     if (!audio) return
 
@@ -114,6 +141,20 @@ export function PlaybackBar() {
     }
   }
 
+  function handlePrevious() {
+    restartTrack(true)
+  }
+
+  function handleNext() {
+    restartTrack(true)
+  }
+
+  function handleVolumeChange(next: number) {
+    setVolume(Math.max(0, Math.min(1, next)))
+  }
+
+  const volumeFillPercent = volume * 100
+
   const recentImage = recentTrack?.album.images[0]?.url
   const idleTitle = recentTrack?.name ?? 'Choose a song'
   const idleArtist = recentTrack ? formatArtistNames(recentTrack.artists) : '—'
@@ -122,28 +163,28 @@ export function PlaybackBar() {
   const artist = artistLabel(idleArtist)
   const artSrc = playlistImage(recentImage)
 
-  const progressDuration = isCorrupted
-    ? CORRUPTED_TRACK_DURATION_SECONDS
-    : duration
+  const playbackDuration =
+    audioDuration > 0
+      ? audioDuration
+      : isCorrupted
+        ? CORRUPTED_TRACK_DURATION_SECONDS
+        : 0
 
-  const progressPercent = corruptionPlayback
-    ? progressDuration > 0
-      ? (currentTime / progressDuration) * 100
-      : 0
-    : 0
+  const progressPercent =
+    playbackDuration > 0 ? Math.min(100, (currentTime / playbackDuration) * 100) : 0
 
-  const elapsed = corruptionPlayback ? formatTime(currentTime) : '0:00'
+  const elapsed = formatTime(currentTime)
   const total = isCorrupted
     ? CORRUPTED_TRACK_DURATION
-    : corruptionPlayback
-      ? formatTime(duration)
+    : playbackDuration > 0
+      ? formatTime(playbackDuration)
       : recentTrack
-        ? formatTime(recentTrack.duration_ms / 1000)
+        ? formatTime(spotifyDuration)
         : '0:00'
 
   return (
     <footer className="playback-bar" aria-label="Player">
-      <audio ref={audioRef} src={corruptedAudio} preload="metadata" />
+      <audio ref={audioRef} src={corruptedAudio} preload="auto" />
 
       <div className="playback-bar__now-playing">
         {artSrc ? (
@@ -161,15 +202,12 @@ export function PlaybackBar() {
 
       <div className="playback-bar__controls">
         <div className="playback-bar__buttons">
-          <button type="button" className="playback-bar__btn" aria-label="Shuffle" disabled>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-.6.8H4.5a.75.75 0 0 0 0 1.5h2.325a.75.75 0 0 0 .61-.316l1.013-1.35A2.25 2.25 0 0 1 11.16 4.5h1.95l-1.017 1.018a.75.75 0 1 0 1.06 1.06L15.98 3.75V6a.75.75 0 0 0 1.5 0V1.5a.75.75 0 0 0-.922-.728l.001.001zM2.5 13.5a.75.75 0 0 0 1.06 0L4.576 12.54 6.525 14.5H8.25a.75.75 0 0 0 0-1.5H6.525a2.25 2.25 0 0 1-1.732-.804l-.6-.8H4.5a.75.75 0 0 0 0 1.5h1.325a.75.75 0 0 0 .61.316l1.013 1.35A2.25 2.25 0 0 0 8.25 14.5h1.95l-1.017-1.018a.75.75 0 1 0-1.06-1.06L2.02 14.25V12a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0v-2.25l.48.48z"
-              />
-            </svg>
-          </button>
-          <button type="button" className="playback-bar__btn" aria-label="Previous" disabled>
+          <button
+            type="button"
+            className="playback-bar__btn"
+            aria-label="Previous"
+            onClick={handlePrevious}
+          >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 fill="currentColor"
@@ -182,7 +220,6 @@ export function PlaybackBar() {
             className="playback-bar__btn playback-bar__btn--play"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             onClick={handlePlayPause}
-            disabled={!corruptionPlayback}
           >
             {isPlaying ? (
               <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -200,19 +237,16 @@ export function PlaybackBar() {
               </svg>
             )}
           </button>
-          <button type="button" className="playback-bar__btn" aria-label="Next" disabled>
+          <button
+            type="button"
+            className="playback-bar__btn"
+            aria-label="Next"
+            onClick={handleNext}
+          >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 fill="currentColor"
                 d="M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z"
-              />
-            </svg>
-          </button>
-          <button type="button" className="playback-bar__btn" aria-label="Repeat" disabled>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12.25H12.25a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.75 4.75v1.5a.75.75 0 0 1-1.5 0v-1.5z"
               />
             </svg>
           </button>
@@ -230,16 +264,24 @@ export function PlaybackBar() {
       </div>
 
       <div className="playback-bar__extras">
-        <button type="button" className="playback-bar__btn" aria-label="Volume" disabled>
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M9.741.85a.75.75 0 0 1 .986.036l3.478 3.478a.75.75 0 0 1-.036 1.04l-3.478 3.478a.75.75 0 0 1-1.04-.036l-2.5-2.5H2.75A1.75 1.75 0 0 1 1 7.25v-1.5A1.75 1.75 0 0 1 2.75 4h4.475l2.516-2.65zM12.5 8a4.5 4.5 0 0 0-1.59-3.414l-.536.536A3 3 0 0 1 13.5 8c0 .83-.336 1.58-.878 2.122l.536.536A4.5 4.5 0 0 0 12.5 8z"
-            />
-          </svg>
-        </button>
         <div className="playback-bar__volume">
-          <div className="playback-bar__volume-fill" style={{ width: '70%' }} />
+          <div
+            className="playback-bar__volume-fill"
+            style={{ width: `${volumeFillPercent}%` }}
+          />
+          <input
+            type="range"
+            className="playback-bar__volume-input"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={(e) => handleVolumeChange(Number(e.target.value))}
+            aria-label="Volume"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(volume * 100)}
+          />
         </div>
       </div>
     </footer>

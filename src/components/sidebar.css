@@ -20,14 +20,30 @@
   padding: 1.5rem 0.75rem 0.5rem;
 }
 
-.sidebar__logo {
+.sidebar__brand {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
   padding: 0 0.75rem 1.25rem;
+  color: var(--text-primary);
+  text-decoration: none;
 }
 
-.sidebar__logo img {
+.sidebar__brand:hover {
+  color: var(--text-primary);
+}
+
+.sidebar__brand-logo {
   display: block;
+  flex-shrink: 0;
+}
+
+.sidebar__brand-title {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-black);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .sidebar__nav {

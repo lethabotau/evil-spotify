@@ -1,101 +1,197 @@
-/* Glitch ramp — driven by CSS variables from useCorruptionGlitchParams (0–180s) */
+/* Glitch ramp — CSS variables from useCorruptionGlitchParams (linear 0–180s) */
 
-.app-layout--corrupted {
+.corruption-svg-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Text melt — feTurbulence filter ramps t=20s → t=100s */
+.app-layout--corrupted.app-layout--text-melt :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    a,
+    label,
+    button,
+    li,
+    td,
+    th,
+    time,
+    small,
+    strong,
+    em,
+    b,
+    i,
+    [class*='__title'],
+    [class*='__artist'],
+    [class*='__name'],
+    [class*='__label'],
+    [class*='__section-title'],
+    [class*='__time'],
+    [class*='__status'],
+    [class*='__brand-title'],
+    [class*='__nav-link'],
+    [class*='__explicit']
+  ):not(svg):not(img):not(video):not(canvas) {
+  filter: url(#corruption-text-melt);
+}
+
+/* Text melt on floating serena videos (same turbulence ramp as page text) */
+.floating-video-layer--text-melt .floating-video__media {
+  filter: url(#corruption-text-melt);
+}
+
+/* Shared glitch surface — app chrome + floating videos (same CSS vars / timing) */
+.corruption-glitch-surface {
   animation:
-    corruption-screen-shake-ramp var(--corruption-shake-period, 2s) linear infinite,
+    corruption-glitch-transform var(--corruption-shake-period, 2s) steps(1, end) infinite,
     corruption-rgb-ramp var(--corruption-rgb-period, 4s) linear infinite;
   will-change: filter, transform;
 }
 
-@keyframes corruption-screen-shake-ramp {
+/* Shake (up to 40px / 100ms) + warp skew/scale — single transform stack */
+@keyframes corruption-glitch-transform {
   0% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) skew(0deg) scale(1);
   }
-  10% {
+  8% {
     transform: translate(
-      calc(-1 * var(--corruption-shake-px, 5px)),
-      calc(var(--corruption-shake-px, 5px) * 0.55)
-    );
+        calc(-1 * var(--corruption-shake-px, 0px)),
+        var(--corruption-shake-px, 0px)
+      )
+      skew(var(--corruption-warp-skew, 0deg)) scale(calc(1 + var(--corruption-warp-scale, 0)));
   }
-  22% {
+  16% {
     transform: translate(
-      calc(var(--corruption-shake-px, 5px) * 0.9),
-      calc(-1 * var(--corruption-shake-px, 5px))
-    );
+        var(--corruption-shake-px, 0px),
+        calc(-1 * var(--corruption-shake-px, 0px))
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg)))
+      scale(calc(1 - var(--corruption-warp-scale, 0) * 0.88));
   }
-  34% {
+  24% {
     transform: translate(
-      calc(-1 * var(--corruption-shake-px, 5px) * 0.85),
-      calc(-1 * var(--corruption-shake-px, 5px) * 0.75)
-    );
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.95),
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.9)
+      )
+      skew(calc(var(--corruption-warp-skew, 0deg) * 0.7))
+      scale(calc(1 + var(--corruption-warp-scale, 0) * 0.92));
   }
-  46% {
+  32% {
     transform: translate(
-      var(--corruption-shake-px, 5px),
-      calc(var(--corruption-shake-px, 5px) * 0.5)
-    );
+        calc(var(--corruption-shake-px, 0px) * 0.85),
+        calc(var(--corruption-shake-px, 0px) * 0.75)
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg) * 0.85))
+      scale(calc(1 - var(--corruption-warp-scale, 0) * 0.75));
   }
-  58% {
+  40% {
     transform: translate(
-      calc(-1 * var(--corruption-shake-px, 5px)),
-      var(--corruption-shake-px, 5px)
-    );
+        calc(-1 * var(--corruption-shake-px, 0px)),
+        calc(var(--corruption-shake-px, 0px) * 0.6)
+      )
+      skew(var(--corruption-warp-skew, 0deg)) scale(calc(1 + var(--corruption-warp-scale, 0) * 0.98));
   }
-  70% {
+  48% {
     transform: translate(
-      calc(var(--corruption-shake-px, 5px) * 0.95),
-      calc(-1 * var(--corruption-shake-px, 5px) * 0.9)
-    );
+        var(--corruption-shake-px, 0px),
+        var(--corruption-shake-px, 0px)
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg) * 0.55))
+      scale(calc(1 - var(--corruption-warp-scale, 0)));
   }
-  82% {
+  56% {
     transform: translate(
-      calc(-1 * var(--corruption-shake-px, 5px) * 0.92),
-      calc(-1 * var(--corruption-shake-px, 5px))
-    );
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.9),
+        calc(-1 * var(--corruption-shake-px, 0px))
+      )
+      skew(calc(var(--corruption-warp-skew, 0deg) * 0.9))
+      scale(calc(1 + var(--corruption-warp-scale, 0) * 0.85));
   }
-  94% {
+  64% {
     transform: translate(
-      calc(var(--corruption-shake-px, 5px) * 0.7),
-      calc(var(--corruption-shake-px, 5px) * 0.8)
-    );
+        calc(var(--corruption-shake-px, 0px) * 0.7),
+        calc(var(--corruption-shake-px, 0px) * 0.85)
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg)))
+      scale(calc(1 - var(--corruption-warp-scale, 0) * 0.92));
+  }
+  72% {
+    transform: translate(
+        calc(-1 * var(--corruption-shake-px, 0px)),
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.5)
+      )
+      skew(calc(var(--corruption-warp-skew, 0deg) * 0.6))
+      scale(calc(1 + var(--corruption-warp-scale, 0)));
+  }
+  80% {
+    transform: translate(
+        var(--corruption-shake-px, 0px),
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.95)
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg) * 0.75))
+      scale(calc(1 - var(--corruption-warp-scale, 0) * 0.82));
+  }
+  88% {
+    transform: translate(
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.8),
+        var(--corruption-shake-px, 0px)
+      )
+      skew(var(--corruption-warp-skew, 0deg)) scale(calc(1 + var(--corruption-warp-scale, 0) * 0.95));
+  }
+  96% {
+    transform: translate(
+        calc(var(--corruption-shake-px, 0px) * 0.55),
+        calc(-1 * var(--corruption-shake-px, 0px) * 0.7)
+      )
+      skew(calc(-1 * var(--corruption-warp-skew, 0deg) * 0.5))
+      scale(calc(1 - var(--corruption-warp-scale, 0) * 0.65));
   }
   100% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) skew(0deg) scale(1);
   }
 }
 
 @keyframes corruption-rgb-ramp {
   0% {
-    filter: drop-shadow(var(--corruption-rgb-px, 4px) 0 0 rgba(255, 40, 40, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(calc(-1 * var(--corruption-rgb-px, 4px)) 0 0 rgba(40, 200, 255, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(0 2px 0 rgba(60, 255, 90, calc(var(--corruption-rgb-strength, 0.38) * 0.6)));
+    filter: drop-shadow(var(--corruption-rgb-px, 0px) 0 0 rgba(255, 0, 0, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(calc(-1 * var(--corruption-rgb-px, 0px)) 0 0 rgba(0, 220, 255, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(0 3px 0 rgba(80, 255, 40, calc(var(--corruption-rgb-strength, 0.15) * 0.85)));
   }
   25% {
-    filter: drop-shadow(calc(-1 * var(--corruption-rgb-px, 4px)) 0 0 rgba(255, 0, 0, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(var(--corruption-rgb-px, 4px) 0 0 rgba(0, 220, 255, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(0 -2px 0 rgba(80, 255, 40, calc(var(--corruption-rgb-strength, 0.38) * 0.65)));
+    filter: drop-shadow(calc(-1 * var(--corruption-rgb-px, 0px)) 0 0 rgba(255, 0, 0, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(var(--corruption-rgb-px, 0px) 0 0 rgba(0, 255, 255, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(0 -4px 0 rgba(255, 220, 0, calc(var(--corruption-rgb-strength, 0.15) * 0.9)));
   }
   50% {
-    filter: drop-shadow(calc(var(--corruption-rgb-px, 4px) * 0.85) 0 0 rgba(255, 20, 60, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(calc(-1 * var(--corruption-rgb-px, 4px) * 0.9) 0 0 rgba(20, 190, 255, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(2px 0 0 rgba(255, 220, 0, calc(var(--corruption-rgb-strength, 0.38) * 0.5)));
+    filter: drop-shadow(calc(var(--corruption-rgb-px, 0px) * 0.9) 0 0 rgba(255, 30, 30, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(calc(-1 * var(--corruption-rgb-px, 0px) * 0.95) 0 0 rgba(20, 190, 255, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(4px 0 0 rgba(0, 255, 120, calc(var(--corruption-rgb-strength, 0.15) * 0.95)));
   }
   75% {
-    filter: drop-shadow(calc(-1 * var(--corruption-rgb-px, 4px) * 0.95) 0 0 rgba(255, 0, 0, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(var(--corruption-rgb-px, 4px) 0 0 rgba(0, 255, 255, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(0 3px 0 rgba(0, 255, 100, calc(var(--corruption-rgb-strength, 0.38) * 0.7)));
+    filter: drop-shadow(calc(-1 * var(--corruption-rgb-px, 0px)) 0 0 rgba(255, 0, 40, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(var(--corruption-rgb-px, 0px) 0 0 rgba(0, 200, 255, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(0 5px 0 rgba(60, 255, 60, calc(var(--corruption-rgb-strength, 0.15) * 0.88)));
   }
   100% {
-    filter: drop-shadow(var(--corruption-rgb-px, 4px) 0 0 rgba(255, 40, 40, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(calc(-1 * var(--corruption-rgb-px, 4px)) 0 0 rgba(40, 200, 255, var(--corruption-rgb-strength, 0.38)))
-      drop-shadow(0 2px 0 rgba(60, 255, 90, calc(var(--corruption-rgb-strength, 0.38) * 0.6)));
+    filter: drop-shadow(var(--corruption-rgb-px, 0px) 0 0 rgba(255, 0, 0, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(calc(-1 * var(--corruption-rgb-px, 0px)) 0 0 rgba(0, 220, 255, var(--corruption-rgb-strength, 0.15)))
+      drop-shadow(0 3px 0 rgba(80, 255, 40, calc(var(--corruption-rgb-strength, 0.15) * 0.85)));
   }
 }
 
 .corruption-fx-layer {
   position: fixed;
   inset: 0;
-  z-index: 9990;
+  z-index: 10002;
   pointer-events: none;
   overflow: hidden;
 }
@@ -109,13 +205,13 @@
   background: repeating-linear-gradient(
     0deg,
     transparent 0,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
+    transparent 1px,
+    rgba(0, 0, 0, 0.14) 1px,
+    rgba(0, 0, 0, 0.14) 3px
   );
   opacity: var(--corruption-scanline-opacity, 0.55);
-  animation: corruption-scanline-drift calc(12s - var(--corruption-nausea, 0) * 9s) linear
-    infinite;
+  animation: corruption-scanline-drift
+    calc(10s - var(--corruption-progress, 0) * 9s) linear infinite;
 }
 
 @keyframes corruption-scanline-drift {
@@ -123,82 +219,94 @@
     transform: translateY(0);
   }
   100% {
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
 }
 
 .corruption-fx--noise {
   opacity: var(--corruption-noise-opacity, 0.055);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
+  background-size: 140px 140px;
   animation: corruption-noise-flicker
-    calc(0.15s - var(--corruption-nausea, 0) * 0.1s) steps(2) infinite;
+    calc(0.12s - var(--corruption-progress, 0) * 0.09s) steps(3) infinite;
 }
 
 @keyframes corruption-noise-flicker {
   0% {
-    opacity: calc(var(--corruption-noise-opacity, 0.05) * 0.7);
+    opacity: calc(var(--corruption-noise-opacity, 0.05) * 0.65);
   }
   50% {
     opacity: var(--corruption-noise-opacity, 0.07);
   }
   100% {
-    opacity: calc(var(--corruption-noise-opacity, 0.05) * 0.85);
+    opacity: calc(var(--corruption-noise-opacity, 0.05) * 1.1);
   }
 }
 
 .corruption-fx--rgb-ramp {
   mix-blend-mode: screen;
-  opacity: calc(var(--corruption-rgb-strength, 0.38) * 0.45);
+  opacity: calc(var(--corruption-rgb-strength, 0.15) * 0.75);
   animation: corruption-rgb-fringe-ramp var(--corruption-rgb-period, 4s) linear infinite;
 }
 
 @keyframes corruption-rgb-fringe-ramp {
   0% {
     box-shadow:
-      inset var(--corruption-rgb-px, 4px) 0 24px rgba(255, 0, 0, 0.12),
-      inset calc(-1 * var(--corruption-rgb-px, 4px)) 0 24px rgba(0, 180, 255, 0.1);
+      inset var(--corruption-rgb-px, 0px) 0 40px rgba(255, 0, 0, 0.35),
+      inset calc(-1 * var(--corruption-rgb-px, 0px)) 0 40px rgba(0, 200, 255, 0.3);
   }
-  50% {
+  33% {
     box-shadow:
-      inset calc(-1 * var(--corruption-rgb-px, 4px)) 0 28px rgba(255, 0, 0, 0.16),
-      inset var(--corruption-rgb-px, 4px) 0 28px rgba(0, 255, 200, 0.12);
+      inset calc(-1 * var(--corruption-rgb-px, 0px)) 0 48px rgba(255, 0, 0, 0.45),
+      inset var(--corruption-rgb-px, 0px) 0 48px rgba(0, 255, 220, 0.35);
+  }
+  66% {
+    box-shadow:
+      inset calc(var(--corruption-rgb-px, 0px) * 0.85) 0 44px rgba(255, 20, 20, 0.4),
+      inset calc(-1 * var(--corruption-rgb-px, 0px) * 0.9) 0 44px rgba(0, 180, 255, 0.38);
   }
   100% {
     box-shadow:
-      inset var(--corruption-rgb-px, 4px) 0 24px rgba(255, 0, 0, 0.12),
-      inset calc(-1 * var(--corruption-rgb-px, 4px)) 0 24px rgba(0, 180, 255, 0.1);
+      inset var(--corruption-rgb-px, 0px) 0 40px rgba(255, 0, 0, 0.35),
+      inset calc(-1 * var(--corruption-rgb-px, 0px)) 0 40px rgba(0, 200, 255, 0.3);
   }
 }
 
 .corruption-fx--vignette {
   background: radial-gradient(
-    ellipse 88% 78% at 50% 50%,
-    transparent 18%,
-    rgba(140, 0, 0, calc(var(--corruption-vignette-edge, 0.32) * 0.55)) 48%,
-    rgba(0, 0, 0, var(--corruption-vignette-edge, 0.32)) 100%
+    ellipse 58% 52% at 50% 50%,
+    transparent 0%,
+    rgba(220, 0, 0, calc(var(--corruption-vignette-edge, 0.2) * 0.7)) 28%,
+    rgba(120, 0, 0, calc(var(--corruption-vignette-edge, 0.2) * 0.95)) 48%,
+    rgba(0, 0, 0, calc(0.75 + var(--corruption-vignette-edge, 0.2) * 0.25)) 100%
   );
   box-shadow: inset 0 0
-    calc(120px + var(--corruption-vignette-edge, 0.32) * 140px)
-    calc(40px + var(--corruption-vignette-edge, 0.32) * 100px)
-    rgba(120, 0, 0, calc(var(--corruption-vignette-edge, 0.32) * 0.65));
-  animation: corruption-vignette-ramp var(--corruption-vignette-pulse, 2.2s) ease-in-out
+    calc(80px + var(--corruption-vignette-edge, 0.2) * 220px)
+    calc(60px + var(--corruption-vignette-edge, 0.2) * 180px)
+    rgba(180, 0, 0, calc(var(--corruption-vignette-edge, 0.2) * 0.9));
+  animation: corruption-vignette-ramp var(--corruption-vignette-pulse, 2.2s) steps(2, end)
     infinite;
 }
 
 @keyframes corruption-vignette-ramp {
   0%,
-  100% {
-    opacity: var(--corruption-vignette-min, 0.22);
+  49% {
+    opacity: var(--corruption-vignette-min, 0.12);
   }
-  50% {
-    opacity: var(--corruption-vignette-max, 0.42);
+  50%,
+  100% {
+    opacity: var(--corruption-vignette-max, 0.28);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-layout--corrupted {
+  .corruption-glitch-surface {
     animation: none;
+  }
+
+  .app-layout--corrupted.app-layout--text-melt :where(h1, h2, h3, h4, h5, h6, p, span, a, label, button, li),
+  .floating-video-layer--text-melt .floating-video__media {
+    filter: none;
   }
 
   .corruption-fx--scanlines,

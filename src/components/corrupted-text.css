@@ -1,10 +1,10 @@
 .corrupted-text {
   display: inline-block;
   animation: corrupted-text-erratic
-    calc(0.16s - var(--corruption-nausea, 0) * 0.1s) steps(2) infinite;
+    calc(0.18s - var(--corruption-progress, 0) * 0.14s) steps(2) infinite;
   text-shadow:
-    calc(2px + var(--corruption-nausea, 0) * 4px) 0 rgba(255, 40, 40, 0.85),
-    calc(-2px - var(--corruption-nausea, 0) * 4px) 0 rgba(40, 200, 255, 0.75);
+    calc(2px + var(--corruption-progress, 0) * 8px) 0 rgba(255, 40, 40, 0.85),
+    calc(-2px - var(--corruption-progress, 0) * 8px) 0 rgba(40, 200, 255, 0.75);
 }
 
 @keyframes corrupted-text-erratic {

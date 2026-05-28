@@ -4,6 +4,11 @@
   z-index: 10001;
   pointer-events: none;
   overflow: hidden;
+  isolation: isolate;
+}
+
+.floating-video-layer.corruption-glitch-surface .floating-video__media {
+  will-change: filter, transform;
 }
 
 .floating-video {

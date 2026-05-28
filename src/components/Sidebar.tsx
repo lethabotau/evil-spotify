@@ -52,8 +52,9 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar__top">
-        <NavLink to="/" className="sidebar__logo" aria-label="Home">
-          <img src={logo} alt="" width={32} height={32} />
+        <NavLink to="/" className="sidebar__brand" aria-label="Evil Spotify home">
+          <img src={logo} alt="" className="sidebar__brand-logo" width={32} height={32} />
+          <span className="sidebar__brand-title">Evil Spotify</span>
         </NavLink>
 
         <nav className="sidebar__nav" aria-label="Main">

@@ -7,7 +7,12 @@
   height: var(--player-height);
   min-height: var(--player-height);
   padding: 0 1rem;
-  background-color: var(--bg-elevated);
+  background: linear-gradient(
+    90deg,
+    var(--gradient-red-fade-start) 0%,
+    var(--gradient-red-fade-mid) 38%,
+    var(--bg-elevated) 72%
+  );
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -143,7 +148,11 @@
   height: 100%;
   background-color: var(--text-primary);
   border-radius: 2px;
-  transition: width 0.25s linear;
+}
+
+.playback-bar__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .playback-bar__extras {
@@ -154,15 +163,33 @@
 }
 
 .playback-bar__volume {
+  position: relative;
   width: 93px;
   height: 4px;
   background-color: var(--bg-tinted);
   border-radius: 2px;
-  overflow: hidden;
 }
 
 .playback-bar__volume-fill {
   height: 100%;
   background-color: var(--text-primary);
   border-radius: 2px;
+  pointer-events: none;
+}
+
+.playback-bar__volume-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  accent-color: var(--text-primary);
+}
+
+.playback-bar__volume:hover .playback-bar__volume-fill,
+.playback-bar__volume:focus-within .playback-bar__volume-fill {
+  background-color: var(--accent);
 }

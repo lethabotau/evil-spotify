@@ -32,17 +32,6 @@
   background-color: var(--bg-card);
 }
 
-.playlist-scroll-card__media .play-button {
-  position: absolute;
-  right: 0.5rem;
-  bottom: 0.5rem;
-}
-
-.playlist-scroll-card:hover .play-button {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .playlist-scroll-card__name {
   display: block;
   margin-bottom: 0.25rem;

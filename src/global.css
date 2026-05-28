@@ -24,6 +24,9 @@
   --border-subtle: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.2);
 
+  --gradient-red-fade-start: #2e1418;
+  --gradient-red-fade-mid: #221418;
+
   --font-family: 'Circular Std', 'Inter', sans-serif;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -120,21 +123,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.btn-primary,
-.login button {
+.btn-primary {
   background-color: var(--accent);
   color: var(--text-primary);
   padding: 0.75rem 2rem;
 }
 
-.btn-primary:hover:not(:disabled),
-.login button:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
   transform: scale(1.04);
 }
 
-.btn-primary:active:not(:disabled),
-.login button:active:not(:disabled) {
+.btn-primary:active:not(:disabled) {
   background-color: var(--accent-press);
   transform: scale(1);
 }
