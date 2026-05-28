@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import corruptedAudio from '../assets/slimey_modded.mp3'
+import {
+  CORRUPTED_TRACK_DURATION,
+  CORRUPTED_TRACK_DURATION_SECONDS,
+} from '../constants/corruption'
 import { useCorruption } from '../context/CorruptionContext'
+import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import { formatArtistNames, formatDuration } from '../utils/format'
 import { getAccessToken } from '../utils/spotifyAuth'
 import { getRecentlyPlayedTracks, type SpotifyTrack } from '../utils/spotify'
 import './playback-bar.css'
-
-const CORRUPTED_TRACK_TITLE = '2Slimey - Roc (Bass Boosted 🔊)'
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -14,7 +17,9 @@ function formatTime(seconds: number): string {
 }
 
 export function PlaybackBar() {
-  const { isCorrupted, clickCount } = useCorruption()
+  const { isCorrupted, flashbangActive } = useCorruption()
+  const corruptionPlayback = isCorrupted || flashbangActive
+  const { playlistImage, trackName, artistLabel } = useCorruptedDisplay()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [recentTrack, setRecentTrack] = useState<SpotifyTrack | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -43,12 +48,12 @@ export function PlaybackBar() {
   }, [])
 
   useEffect(() => {
-    if (!isCorrupted) return
+    if (!flashbangActive) return
     const audio = audioRef.current
     if (!audio) return
     audio.currentTime = 0
     audio.play().catch(() => {})
-  }, [isCorrupted, clickCount])
+  }, [flashbangActive])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -81,7 +86,7 @@ export function PlaybackBar() {
   }, [])
 
   function handlePlayPause() {
-    if (!isCorrupted) return
+    if (!corruptionPlayback) return
 
     const audio = audioRef.current
     if (!audio) return
@@ -97,33 +102,38 @@ export function PlaybackBar() {
   const idleTitle = recentTrack?.name ?? 'Choose a song'
   const idleArtist = recentTrack ? formatArtistNames(recentTrack.artists) : '—'
 
-  const title = isCorrupted ? CORRUPTED_TRACK_TITLE : idleTitle
-  const artist = isCorrupted ? '' : idleArtist
+  const title = trackName(idleTitle)
+  const artist = artistLabel(idleArtist)
+  const artSrc = playlistImage(recentImage)
 
-  const progressPercent = isCorrupted
-    ? duration > 0
-      ? (currentTime / duration) * 100
+  const progressDuration = isCorrupted
+    ? CORRUPTED_TRACK_DURATION_SECONDS
+    : duration
+
+  const progressPercent = corruptionPlayback
+    ? progressDuration > 0
+      ? (currentTime / progressDuration) * 100
       : 0
     : 0
 
-  const elapsed = isCorrupted ? formatTime(currentTime) : '0:00'
+  const elapsed = corruptionPlayback ? formatTime(currentTime) : '0:00'
   const total = isCorrupted
-    ? formatTime(duration)
-    : recentTrack
-      ? formatTime(recentTrack.duration_ms / 1000)
-      : '0:00'
+    ? CORRUPTED_TRACK_DURATION
+    : corruptionPlayback
+      ? formatTime(duration)
+      : recentTrack
+        ? formatTime(recentTrack.duration_ms / 1000)
+        : '0:00'
 
   return (
     <footer className="playback-bar" aria-label="Player">
       <audio ref={audioRef} src={corruptedAudio} preload="metadata" />
 
       <div className="playback-bar__now-playing">
-        {recentImage && !isCorrupted ? (
-          <img src={recentImage} alt="" className="playback-bar__art" />
+        {artSrc ? (
+          <img src={artSrc} alt="" className="playback-bar__art" />
         ) : (
-          <div
-            className={`playback-bar__art${isCorrupted ? ' playback-bar__art--active' : ' playback-bar__art--empty'}`}
-          />
+          <div className="playback-bar__art playback-bar__art--empty" />
         )}
         <div className="playback-bar__track">
           <span className="playback-bar__title">{title}</span>
@@ -154,7 +164,7 @@ export function PlaybackBar() {
             className="playback-bar__btn playback-bar__btn--play"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             onClick={handlePlayPause}
-            disabled={!isCorrupted}
+            disabled={!corruptionPlayback}
           >
             {isPlaying ? (
               <svg viewBox="0 0 16 16" aria-hidden="true">

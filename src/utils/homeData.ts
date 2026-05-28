@@ -2,6 +2,7 @@ import type {
   SpotifyPlaylist,
   SpotifyRecentlyPlayedResponse,
 } from './spotify'
+import { routeFromPlayContext, spotifyIdFromUri } from './spotifyUri'
 
 export interface HomeGridItem {
   id: string
@@ -33,42 +34,49 @@ export function buildRecentGridItems(
         id: `album-${track.album.id}`,
         name: track.album.name,
         imageUrl: track.album.images[0]?.url ?? null,
-        route: null,
+        route: `/album/${track.album.id}`,
       })
       continue
     }
 
+    const route = routeFromPlayContext(context)
+    if (!route) continue
+
     if (context.type === 'playlist') {
-      const playlistId = context.uri.split(':').pop()
+      const playlistId = spotifyIdFromUri(context.uri)
       if (!playlistId) continue
       const playlist = playlistById.get(playlistId)
       pushItem({
         id: `playlist-${playlistId}`,
         name: playlist?.name ?? track.name,
         imageUrl: playlist?.images[0]?.url ?? track.album.images[0]?.url ?? null,
-        route: `/playlist/${playlistId}`,
+        route,
       })
       continue
     }
 
     if (context.type === 'album') {
+      const albumId = spotifyIdFromUri(context.uri)
+      if (!albumId) continue
       pushItem({
-        id: `album-${track.album.id}`,
+        id: `album-${albumId}`,
         name: track.album.name,
         imageUrl: track.album.images[0]?.url ?? null,
-        route: null,
+        route,
       })
       continue
     }
 
     if (context.type === 'artist') {
-      const artist = track.artists[0]
+      const artistId = spotifyIdFromUri(context.uri)
+      if (!artistId) continue
+      const artist = track.artists.find((a) => a.id === artistId) ?? track.artists[0]
       if (!artist) continue
       pushItem({
-        id: `artist-${artist.id}`,
+        id: `artist-${artistId}`,
         name: artist.name,
         imageUrl: track.album.images[0]?.url ?? null,
-        route: null,
+        route,
       })
     }
   }

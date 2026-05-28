@@ -6,34 +6,44 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { FlashbangOverlay } from '../components/FlashbangOverlay'
 
 export interface CorruptionContextValue {
-  clickCount: number
   isCorrupted: boolean
-  incrementClick: () => void
+  flashbangActive: boolean
+  startCorruption: () => void
 }
 
 const CorruptionContext = createContext<CorruptionContextValue | null>(null)
 
 export function CorruptionProvider({ children }: { children: ReactNode }) {
-  const [clickCount, setClickCount] = useState(0)
-  const isCorrupted = clickCount >= 1
+  const [isCorrupted, setIsCorrupted] = useState(false)
+  const [flashbangActive, setFlashbangActive] = useState(false)
 
-  const incrementClick = useCallback(() => {
-    setClickCount((count) => count + 1)
+  const startCorruption = useCallback(() => {
+    if (isCorrupted || flashbangActive) return
+    setFlashbangActive(true)
+  }, [isCorrupted, flashbangActive])
+
+  const completeCorruption = useCallback(() => {
+    setIsCorrupted(true)
+    setFlashbangActive(false)
   }, [])
 
   const value = useMemo(
     (): CorruptionContextValue => ({
-      clickCount,
       isCorrupted,
-      incrementClick,
+      flashbangActive,
+      startCorruption,
     }),
-    [clickCount, isCorrupted, incrementClick],
+    [isCorrupted, flashbangActive, startCorruption],
   )
 
   return (
-    <CorruptionContext.Provider value={value}>{children}</CorruptionContext.Provider>
+    <CorruptionContext.Provider value={value}>
+      {children}
+      {flashbangActive && <FlashbangOverlay onComplete={completeCorruption} />}
+    </CorruptionContext.Provider>
   )
 }
 

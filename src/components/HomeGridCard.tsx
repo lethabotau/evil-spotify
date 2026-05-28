@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import type { HomeGridItem } from '../utils/homeData'
 import './home-grid-card.css'
 import './play-button.css'
@@ -9,20 +10,23 @@ interface HomeGridCardProps {
 
 export function HomeGridCard({ item }: HomeGridCardProps) {
   const navigate = useNavigate()
+  const { playlistImage, albumName, isCorrupted } = useCorruptedDisplay()
+  const thumbSrc = isCorrupted ? playlistImage(item.imageUrl) : item.imageUrl
+  const displayName = isCorrupted ? albumName(item.name) : item.name
 
   const inner = (
     <>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" className="home-grid-card__img" />
+      {thumbSrc ? (
+        <img src={thumbSrc} alt="" className="home-grid-card__img" />
       ) : (
         <span className="home-grid-card__img home-grid-card__img--placeholder" />
       )}
-      <span className="home-grid-card__name">{item.name}</span>
+      <span className="home-grid-card__name">{displayName}</span>
       {item.route && (
         <button
           type="button"
           className="play-button play-button--sm"
-          aria-label={`Play ${item.name}`}
+          aria-label={`Play ${displayName}`}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -33,13 +37,13 @@ export function HomeGridCard({ item }: HomeGridCardProps) {
     </>
   )
 
-  if (item.route) {
-    return (
-      <Link to={item.route} className="home-grid-card">
-        {inner}
-      </Link>
-    )
+  if (!item.route) {
+    return <div className="home-grid-card">{inner}</div>
   }
 
-  return <div className="home-grid-card">{inner}</div>
+  return (
+    <Link to={item.route} className="home-grid-card">
+      {inner}
+    </Link>
+  )
 }

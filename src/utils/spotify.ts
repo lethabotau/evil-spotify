@@ -277,3 +277,56 @@ export async function getAllPlaylistTracks(
 
   return items
 }
+
+export interface SpotifyAlbumTrackSimplified {
+  artists: SpotifyArtist[]
+  available_markets: string[]
+  disc_number: number
+  duration_ms: number
+  explicit: boolean
+  external_urls: SpotifyExternalUrls
+  href: string
+  id: string
+  is_local: boolean
+  name: string
+  preview_url: string | null
+  track_number: number
+  type: 'track'
+  uri: string
+}
+
+export type SpotifyAlbumTracksResponse = SpotifyPaging<SpotifyAlbumTrackSimplified>
+
+export async function getAlbum(albumId: string): Promise<SpotifyAlbum> {
+  const { data } = await spotify.get<SpotifyAlbum>(`/albums/${albumId}`)
+  return data
+}
+
+export async function getAlbumTracks(
+  albumId: string,
+  limit = 50,
+  offset = 0,
+): Promise<SpotifyAlbumTracksResponse> {
+  const { data } = await spotify.get<SpotifyAlbumTracksResponse>(
+    `/albums/${albumId}/tracks`,
+    { params: { limit, offset } },
+  )
+  return data
+}
+
+export async function getAllAlbumTracks(
+  albumId: string,
+): Promise<SpotifyAlbumTrackSimplified[]> {
+  const items: SpotifyAlbumTrackSimplified[] = []
+  const limit = 50
+  let offset = 0
+
+  while (true) {
+    const page = await getAlbumTracks(albumId, limit, offset)
+    items.push(...page.items)
+    if (!page.next) break
+    offset += limit
+  }
+
+  return items
+}

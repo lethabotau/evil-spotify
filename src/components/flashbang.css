@@ -1,0 +1,46 @@
+.flashbang {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.flashbang__backdrop {
+  position: absolute;
+  inset: 0;
+  transition: background-color 0.05s linear;
+}
+
+.flashbang__backdrop--white {
+  background-color: #ffffff;
+}
+
+.flashbang__backdrop--red {
+  background-color: #e31d1d;
+}
+
+.flashbang__image {
+  position: relative;
+  z-index: 1;
+  width: min(72vw, 520px);
+  height: min(72vw, 520px);
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.flashbang--fade-out {
+  animation: flashbang-fade-out 0.35s ease forwards;
+}
+
+@keyframes flashbang-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import logo from '../assets/logo.svg'
+import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import { getUserPlaylists, type SpotifyPlaylist } from '../utils/spotify'
 import './sidebar.css'
 
@@ -44,6 +45,7 @@ const navItems = [
 ] as const
 
 export function Sidebar() {
+  const { playlistImage, playlistName } = useCorruptedDisplay()
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,9 +112,9 @@ export function Sidebar() {
                     `sidebar__playlist-link${isActive ? ' sidebar__playlist-link--active' : ''}`
                   }
                 >
-                  {playlist.images[0] ? (
+                  {playlistImage(playlist.images[0]?.url) ? (
                     <img
-                      src={playlist.images[0].url}
+                      src={playlistImage(playlist.images[0]?.url)!}
                       alt=""
                       className="sidebar__playlist-img"
                       width={32}
@@ -121,7 +123,7 @@ export function Sidebar() {
                   ) : (
                     <span className="sidebar__playlist-img sidebar__playlist-img--placeholder" />
                   )}
-                  <span className="sidebar__playlist-name">{playlist.name}</span>
+                  <span className="sidebar__playlist-name">{playlistName(playlist.name)}</span>
                 </NavLink>
               </li>
             ))}

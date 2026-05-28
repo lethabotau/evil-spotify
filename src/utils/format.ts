@@ -22,3 +22,7 @@ export function formatArtistNames(
 ): string {
   return artists.map((a) => a.name).join(', ')
 }
+
+export function releaseYear(releaseDate: string): string {
+  return releaseDate.split('-')[0] ?? releaseDate
+}
