@@ -6,11 +6,8 @@ import { Album } from './pages/Album'
 import { Artist } from './pages/Artist'
 import { Callback } from './pages/Callback'
 import { Home } from './pages/Home'
-import { Library } from './pages/Library'
 import { Login } from './pages/Login'
 import { Playlist } from './pages/Playlist'
-import { Search } from './pages/Search'
-
 function App() {
   return (
     <Routes>
@@ -19,8 +16,6 @@ function App() {
       <Route element={<AuthGuard />}>
         <Route element={<AppLayout />}>
           <Route index element={<Home />} />
-          <Route path="search" element={<Search />} />
-          <Route path="library" element={<Library />} />
           <Route path="playlist/:id" element={<Playlist />} />
           <Route path="album/:id" element={<Album />} />
           <Route path="artist/:id" element={<Artist />} />

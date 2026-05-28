@@ -16,33 +16,7 @@ function HomeIcon() {
   )
 }
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.271 9.271 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm0 16.534a7.26 7.26 0 1 1 0-14.52 7.26 7.26 0 0 1 0 14.52z"
-      />
-    </svg>
-  )
-}
-
-function LibraryIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M14.5 2.134a1 1 0 0 1 1 0l6 3.464a1 1 0 0 1 .5.866V21a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 .5-.866zM16 4.732v14.536h4V6.041l-4-2.309zM4.5 2.134a1 1 0 0 1 1 0l6 3.464a1 1 0 0 1 .5.866V21a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 .5-.866zM6 4.732v14.536h4V6.041l-4-2.309z"
-      />
-    </svg>
-  )
-}
-
-const navItems = [
-  { to: '/', label: 'Home', icon: HomeIcon, end: true },
-  { to: '/search', label: 'Search', icon: SearchIcon },
-  { to: '/library', label: 'Your Library', icon: LibraryIcon },
-] as const
+const navItems = [{ to: '/', label: 'Home', icon: HomeIcon, end: true }] as const
 
 export function Sidebar() {
   const { playlistImage, playlistName } = useCorruptedDisplay()

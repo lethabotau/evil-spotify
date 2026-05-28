@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { HomeGridCard } from '../components/HomeGridCard'
 import { PlaylistScrollCard } from '../components/PlaylistScrollCard'
 import { buildRecentGridItems, type HomeGridItem } from '../utils/homeData'
@@ -10,10 +9,7 @@ import {
 } from '../utils/spotify'
 import './home.css'
 
-const FILTERS = ['All', 'Music', 'Podcasts', 'Audiobooks'] as const
-
 export function Home() {
-  const [activeFilter, setActiveFilter] = useState<(typeof FILTERS)[number]>('All')
   const [gridItems, setGridItems] = useState<HomeGridItem[]>([])
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,21 +40,6 @@ export function Home() {
 
   return (
     <div className="home">
-      <div className="home__filters" role="tablist" aria-label="Content filters">
-        {FILTERS.map((filter) => (
-          <button
-            key={filter}
-            type="button"
-            role="tab"
-            aria-selected={activeFilter === filter}
-            className={`home__filter${activeFilter === filter ? ' home__filter--active' : ''}`}
-            onClick={() => setActiveFilter(filter)}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-
       {loading && <p className="home__status">Loading…</p>}
       {error && <p className="home__status home__status--error">{error}</p>}
 
@@ -73,12 +54,7 @@ export function Home() {
           </section>
 
           <section className="home__playlists-section" aria-label="Your playlists">
-            <div className="home__section-header">
-              <h2 className="home__section-title">Your Playlists</h2>
-              <Link to="/library" className="home__show-all">
-                Show all
-              </Link>
-            </div>
+            <h2 className="home__section-title">Your Playlists</h2>
             <div className="home__playlist-scroll">
               {playlists.map((playlist) => (
                 <PlaylistScrollCard key={playlist.id} playlist={playlist} />
