@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useCorruption } from '../context/CorruptionContext'
+import { useCorruptedTrackPlay } from '../hooks/useCorruptedTrackPlay'
+import { CorruptedText } from '../components/CorruptedText'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import '../components/play-button.css'
 import { formatArtistNames, formatTotalDuration } from '../utils/format'
@@ -22,7 +23,7 @@ function stripHtml(html: string): string {
 
 export function Playlist() {
   const { id } = useParams<{ id: string }>()
-  const { playlistImage } = useCorruptedDisplay()
+  const { playlistImage, heroTitle } = useCorruptedDisplay()
   const [playlist, setPlaylist] = useState<SpotifyPlaylist | null>(null)
   const [tracks, setTracks] = useState<SpotifyPlaylistTrackItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,7 +120,9 @@ export function Playlist() {
           )}
           <div className="playlist-hero__meta">
             <span className="playlist-hero__type">{visibility}</span>
-            <h1 className="playlist-hero__title">{playlist.name}</h1>
+            <h1 className="playlist-hero__title">
+              <CorruptedText>{heroTitle(playlist.name)}</CorruptedText>
+            </h1>
             <div className="playlist-hero__stats">
               <span className="playlist-hero__owner">{ownerName}</span>
               <span className="playlist-hero__dot" aria-hidden="true">
@@ -197,7 +200,7 @@ export function Playlist() {
 }
 
 function TrackRow({ index, track }: { index: number; track: SpotifyTrack }) {
-  const { startCorruption } = useCorruption()
+  const handleTrackPlay = useCorruptedTrackPlay()
   const { isCorrupted, playlistImage, trackName, artistLabel, trackDuration, albumName } =
     useCorruptedDisplay()
   const albumImage = playlistImage(track.album.images[track.album.images.length - 1]?.url)
@@ -205,12 +208,30 @@ function TrackRow({ index, track }: { index: number; track: SpotifyTrack }) {
   const displayArtist = artistLabel(formatArtistNames(track.artists))
 
   return (
-    <div className="playlist-tracks__row" role="row">
+    <div
+      className={`playlist-tracks__row${isCorrupted ? ' playlist-tracks__row--corrupted' : ''}`}
+      role="row"
+      onClick={isCorrupted ? handleTrackPlay : undefined}
+      onKeyDown={
+        isCorrupted
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleTrackPlay()
+              }
+            }
+          : undefined
+      }
+      tabIndex={isCorrupted ? 0 : undefined}
+    >
       <button
         type="button"
         className="playlist-tracks__col playlist-tracks__col--index playlist-tracks__play-btn"
         aria-label={`Play ${displayName}`}
-        onClick={startCorruption}
+        onClick={(e) => {
+          e.stopPropagation()
+          handleTrackPlay()
+        }}
       >
         <span className="playlist-tracks__index">{index}</span>
         <span className="playlist-tracks__play-icon" aria-hidden="true">

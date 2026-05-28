@@ -1,0 +1,33 @@
+.corrupted-text {
+  display: inline-block;
+  animation: corrupted-text-erratic
+    calc(0.16s - var(--corruption-nausea, 0) * 0.1s) steps(2) infinite;
+  text-shadow:
+    calc(2px + var(--corruption-nausea, 0) * 4px) 0 rgba(255, 40, 40, 0.85),
+    calc(-2px - var(--corruption-nausea, 0) * 4px) 0 rgba(40, 200, 255, 0.75);
+}
+
+@keyframes corrupted-text-erratic {
+  0% {
+    transform: translate(0, 0) skewX(0deg);
+  }
+  25% {
+    transform: translate(1px, -2px) skewX(-3deg);
+  }
+  50% {
+    transform: translate(-2px, 1px) skewX(2deg);
+  }
+  75% {
+    transform: translate(2px, 1px) skewX(-2deg);
+  }
+  100% {
+    transform: translate(0, 0) skewX(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corrupted-text {
+    animation: none;
+    text-shadow: none;
+  }
+}

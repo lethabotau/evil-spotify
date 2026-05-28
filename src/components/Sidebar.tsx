@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import logo from '../assets/logo.svg'
+import { CorruptedText } from './CorruptedText'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import { getUserPlaylists, type SpotifyPlaylist } from '../utils/spotify'
 import './sidebar.css'
@@ -97,7 +98,9 @@ export function Sidebar() {
                   ) : (
                     <span className="sidebar__playlist-img sidebar__playlist-img--placeholder" />
                   )}
-                  <span className="sidebar__playlist-name">{playlistName(playlist.name)}</span>
+                  <CorruptedText className="sidebar__playlist-name">
+                    {playlistName(playlist.name)}
+                  </CorruptedText>
                 </NavLink>
               </li>
             ))}

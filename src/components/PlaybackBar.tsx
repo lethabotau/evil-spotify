@@ -17,7 +17,7 @@ function formatTime(seconds: number): string {
 }
 
 export function PlaybackBar() {
-  const { isCorrupted, flashbangActive } = useCorruption()
+  const { isCorrupted, flashbangActive, playbackRestartKey, maxVolume } = useCorruption()
   const corruptionPlayback = isCorrupted || flashbangActive
   const { playlistImage, trackName, artistLabel } = useCorruptedDisplay()
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -52,8 +52,24 @@ export function PlaybackBar() {
     const audio = audioRef.current
     if (!audio) return
     audio.currentTime = 0
+    setCurrentTime(0)
     audio.play().catch(() => {})
   }, [flashbangActive])
+
+  useEffect(() => {
+    if (!isCorrupted || playbackRestartKey === 0) return
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = 0
+    setCurrentTime(0)
+    audio.play().catch(() => {})
+  }, [playbackRestartKey, isCorrupted])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !isCorrupted) return
+    audio.volume = maxVolume ? 1 : 0.85
+  }, [isCorrupted, maxVolume])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -137,7 +153,9 @@ export function PlaybackBar() {
         )}
         <div className="playback-bar__track">
           <span className="playback-bar__title">{title}</span>
-          {artist && <span className="playback-bar__artist">{artist}</span>}
+          {(artist || isCorrupted) && (
+            <span className="playback-bar__artist">{artist}</span>
+          )}
         </div>
       </div>
 

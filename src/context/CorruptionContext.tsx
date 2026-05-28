@@ -19,8 +19,11 @@ export interface CorruptionContextValue {
   showVideo: boolean
   maxVolume: boolean
   nuclear: boolean
+  /** Bumps when corrupted playback should restart from 0:00 */
+  playbackRestartKey: number
   startCorruption: () => void
   incrementClick: () => void
+  requestPlaybackRestart: () => void
 }
 
 const CorruptionContext = createContext<CorruptionContextValue | null>(null)
@@ -29,6 +32,7 @@ export function CorruptionProvider({ children }: { children: ReactNode }) {
   const [isCorrupted, setIsCorrupted] = useState(false)
   const [flashbangActive, setFlashbangActive] = useState(false)
   const [clickCount, setClickCount] = useState(0)
+  const [playbackRestartKey, setPlaybackRestartKey] = useState(0)
 
   const intenseGlitch = clickCount >= 3
   const showVideo = clickCount >= 5
@@ -37,6 +41,10 @@ export function CorruptionProvider({ children }: { children: ReactNode }) {
 
   const incrementClick = useCallback(() => {
     setClickCount((count) => (count >= MAX_CLICK_COUNT ? count : count + 1))
+  }, [])
+
+  const requestPlaybackRestart = useCallback(() => {
+    setPlaybackRestartKey((key) => key + 1)
   }, [])
 
   const startCorruption = useCallback(() => {
@@ -59,8 +67,10 @@ export function CorruptionProvider({ children }: { children: ReactNode }) {
       showVideo,
       maxVolume,
       nuclear,
+      playbackRestartKey,
       startCorruption,
       incrementClick,
+      requestPlaybackRestart,
     }),
     [
       isCorrupted,
@@ -70,8 +80,10 @@ export function CorruptionProvider({ children }: { children: ReactNode }) {
       showVideo,
       maxVolume,
       nuclear,
+      playbackRestartKey,
       startCorruption,
       incrementClick,
+      requestPlaybackRestart,
     ],
   )
 

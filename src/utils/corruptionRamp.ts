@@ -1,8 +1,10 @@
 export const CORRUPTION_RAMP_DURATION_MS = 180_000
 
 export interface CorruptionGlitchParams {
-  /** 0–1, linear elapsed / 180s */
+  /** 0–1 linear elapsed / 180s */
   progress: number
+  /** Eased 0–1 — accelerates nausea toward the end */
+  nausea: number
   elapsedMs: number
   shakePx: number
   shakePeriodMs: number
@@ -13,29 +15,36 @@ export interface CorruptionGlitchParams {
   vignetteOpacityMax: number
   vignettePulseMs: number
   vignetteEdgeAlpha: number
+  scanlineOpacity: number
+  noiseOpacity: number
 }
 
-function lerp(start: number, end: number, progress: number): number {
-  return start + (end - start) * progress
+function lerp(start: number, end: number, t: number): number {
+  return start + (end - start) * t
 }
 
 export function computeCorruptionGlitchParams(
   elapsedMs: number,
 ): CorruptionGlitchParams {
   const progress = Math.min(1, Math.max(0, elapsedMs / CORRUPTION_RAMP_DURATION_MS))
+  /** Quadratic ease — stays bearable early, gets vicious late */
+  const nausea = progress * progress
 
   return {
     progress,
+    nausea,
     elapsedMs: Math.min(elapsedMs, CORRUPTION_RAMP_DURATION_MS),
-    shakePx: lerp(5, 25, progress),
-    shakePeriodMs: lerp(2000, 200, progress),
-    rgbSplitPx: lerp(4, 15, progress),
-    rgbCycleMs: lerp(4000, 500, progress),
-    rgbStrength: lerp(0.38, 0.88, progress),
-    vignetteOpacityMin: lerp(0.22, 0.7, progress),
-    vignetteOpacityMax: lerp(0.42, 1, progress),
-    vignettePulseMs: lerp(2200, 550, progress),
-    vignetteEdgeAlpha: lerp(0.32, 0.98, progress),
+    shakePx: lerp(5, 28, nausea),
+    shakePeriodMs: lerp(2000, 180, nausea),
+    rgbSplitPx: lerp(4, 18, nausea),
+    rgbCycleMs: lerp(4500, 450, nausea),
+    rgbStrength: lerp(0.35, 0.95, nausea),
+    vignetteOpacityMin: lerp(0.2, 0.75, nausea),
+    vignetteOpacityMax: lerp(0.4, 1, nausea),
+    vignettePulseMs: lerp(2400, 400, nausea),
+    vignetteEdgeAlpha: lerp(0.28, 1, nausea),
+    scanlineOpacity: lerp(0.45, 0.95, nausea),
+    noiseOpacity: lerp(0.05, 0.18, nausea),
   }
 }
 
@@ -52,5 +61,8 @@ export function corruptionGlitchStyleProperties(
     '--corruption-vignette-max': String(params.vignetteOpacityMax),
     '--corruption-vignette-pulse': `${params.vignettePulseMs}ms`,
     '--corruption-vignette-edge': String(params.vignetteEdgeAlpha),
+    '--corruption-scanline-opacity': String(params.scanlineOpacity),
+    '--corruption-noise-opacity': String(params.noiseOpacity),
+    '--corruption-nausea': String(params.nausea),
   }
 }

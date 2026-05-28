@@ -110,11 +110,12 @@
     0deg,
     transparent 0,
     transparent 2px,
-    rgba(0, 0, 0, 0.045) 2px,
-    rgba(0, 0, 0, 0.045) 4px
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
   );
-  opacity: 0.55;
-  animation: corruption-scanline-drift 12s linear infinite;
+  opacity: var(--corruption-scanline-opacity, 0.55);
+  animation: corruption-scanline-drift calc(12s - var(--corruption-nausea, 0) * 9s) linear
+    infinite;
 }
 
 @keyframes corruption-scanline-drift {
@@ -127,21 +128,22 @@
 }
 
 .corruption-fx--noise {
-  opacity: 0.055;
+  opacity: var(--corruption-noise-opacity, 0.055);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
-  animation: corruption-noise-flicker 0.15s steps(2) infinite;
+  animation: corruption-noise-flicker
+    calc(0.15s - var(--corruption-nausea, 0) * 0.1s) steps(2) infinite;
 }
 
 @keyframes corruption-noise-flicker {
   0% {
-    opacity: 0.04;
+    opacity: calc(var(--corruption-noise-opacity, 0.05) * 0.7);
   }
   50% {
-    opacity: 0.07;
+    opacity: var(--corruption-noise-opacity, 0.07);
   }
   100% {
-    opacity: 0.05;
+    opacity: calc(var(--corruption-noise-opacity, 0.05) * 0.85);
   }
 }
 

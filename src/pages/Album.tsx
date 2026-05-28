@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useCorruption } from '../context/CorruptionContext'
+import { useCorruptedTrackPlay } from '../hooks/useCorruptedTrackPlay'
+import { CorruptedText } from '../components/CorruptedText'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
 import '../components/play-button.css'
 import {
@@ -20,7 +21,7 @@ import './playlist.css'
 
 export function Album() {
   const { id } = useParams<{ id: string }>()
-  const { playlistImage, albumName, artistLabel } = useCorruptedDisplay()
+  const { playlistImage, heroTitle, artistLabel } = useCorruptedDisplay()
   const [album, setAlbum] = useState<SpotifyAlbum | null>(null)
   const [tracks, setTracks] = useState<SpotifyAlbumTrackSimplified[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +90,7 @@ export function Album() {
   }
 
   const coverUrl = playlistImage(album.images[0]?.url)
-  const displayTitle = albumName(album.name)
+  const displayTitle = heroTitle(album.name)
   const displayArtist = artistLabel(formatArtistNames(album.artists))
   const year = releaseYear(album.release_date)
   const typeLabel = album.album_type
@@ -115,7 +116,9 @@ export function Album() {
           )}
           <div className="playlist-hero__meta">
             <span className="playlist-hero__type">{typeLabel}</span>
-            <h1 className="playlist-hero__title">{displayTitle}</h1>
+            <h1 className="playlist-hero__title">
+              <CorruptedText>{displayTitle}</CorruptedText>
+            </h1>
             <div className="playlist-hero__stats">
               <span className="playlist-hero__owner">{displayArtist}</span>
               <span className="playlist-hero__dot" aria-hidden="true">
@@ -206,7 +209,7 @@ function AlbumTrackRow({
   track: SpotifyAlbumTrackSimplified
   coverUrl: string | null
 }) {
-  const { startCorruption } = useCorruption()
+  const handleTrackPlay = useCorruptedTrackPlay()
   const { isCorrupted, playlistImage, trackName, artistLabel, trackDuration } =
     useCorruptedDisplay()
   const thumbSrc = playlistImage(coverUrl)
@@ -214,12 +217,30 @@ function AlbumTrackRow({
   const displayArtist = artistLabel(formatArtistNames(track.artists))
 
   return (
-    <div className="playlist-tracks__row" role="row">
+    <div
+      className={`playlist-tracks__row${isCorrupted ? ' playlist-tracks__row--corrupted' : ''}`}
+      role="row"
+      onClick={isCorrupted ? handleTrackPlay : undefined}
+      onKeyDown={
+        isCorrupted
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleTrackPlay()
+              }
+            }
+          : undefined
+      }
+      tabIndex={isCorrupted ? 0 : undefined}
+    >
       <button
         type="button"
         className="playlist-tracks__col playlist-tracks__col--index playlist-tracks__play-btn"
         aria-label={`Play ${displayName}`}
-        onClick={startCorruption}
+        onClick={(e) => {
+          e.stopPropagation()
+          handleTrackPlay()
+        }}
       >
         <span className="playlist-tracks__index">{index}</span>
         <span className="playlist-tracks__play-icon" aria-hidden="true">

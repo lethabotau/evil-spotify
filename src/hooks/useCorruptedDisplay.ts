@@ -2,6 +2,8 @@ import {
   CORRUPTED_ALBUM_NAME,
   CORRUPTED_ARTIST_NAME,
   CORRUPTED_COVER_SRC,
+  CORRUPTED_PAGE_HEADING,
+  CORRUPTED_SIDEBAR_PLAYLIST_NAME,
   CORRUPTED_TRACK_DURATION,
   CORRUPTED_TRACK_NAME,
 } from '../constants/corruption'
@@ -20,6 +22,10 @@ export function useCorruptedDisplay() {
     trackDuration: (durationMs: number) =>
       isCorrupted ? CORRUPTED_TRACK_DURATION : formatDuration(durationMs),
     albumName: (name: string) => (isCorrupted ? CORRUPTED_ALBUM_NAME : name),
-    playlistName: (name: string) => (isCorrupted ? CORRUPTED_ARTIST_NAME : name),
+    /** Sidebar playlist list only */
+    playlistName: (name: string) =>
+      isCorrupted ? CORRUPTED_SIDEBAR_PLAYLIST_NAME : name,
+    /** Main content hero h1 (playlist / album pages) */
+    heroTitle: (name: string) => (isCorrupted ? CORRUPTED_PAGE_HEADING : name),
   }
 }
