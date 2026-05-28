@@ -24,10 +24,15 @@
   border-radius: 4px;
   flex-shrink: 0;
   background-color: var(--bg-card);
+  object-fit: cover;
 }
 
 .playback-bar__art--empty {
   background-color: var(--bg-tinted);
+}
+
+.playback-bar__art--active {
+  background: linear-gradient(135deg, var(--accent) 0%, #4a1010 100%);
 }
 
 .playback-bar__track {
@@ -103,6 +108,11 @@
   transform: scale(1.06);
 }
 
+.playback-bar__btn--play:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .playback-bar__progress {
   display: flex;
   align-items: center;
@@ -133,6 +143,7 @@
   height: 100%;
   background-color: var(--text-primary);
   border-radius: 2px;
+  transition: width 0.25s linear;
 }
 
 .playback-bar__extras {

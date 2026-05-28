@@ -1,13 +1,15 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { HomeGridItem } from '../utils/homeData'
-import { PlayButton } from './PlayButton'
 import './home-grid-card.css'
+import './play-button.css'
 
 interface HomeGridCardProps {
   item: HomeGridItem
 }
 
 export function HomeGridCard({ item }: HomeGridCardProps) {
+  const navigate = useNavigate()
+
   const inner = (
     <>
       {item.imageUrl ? (
@@ -16,12 +18,18 @@ export function HomeGridCard({ item }: HomeGridCardProps) {
         <span className="home-grid-card__img home-grid-card__img--placeholder" />
       )}
       <span className="home-grid-card__name">{item.name}</span>
-      <PlayButton
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        }}
-      />
+      {item.route && (
+        <button
+          type="button"
+          className="play-button play-button--sm"
+          aria-label={`Play ${item.name}`}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            navigate(item.route!)
+          }}
+        />
+      )}
     </>
   )
 

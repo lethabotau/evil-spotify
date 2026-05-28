@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { PlayButton } from '../components/PlayButton'
+import { useCorruption } from '../context/CorruptionContext'
+import '../components/play-button.css'
 import {
   formatArtistNames,
   formatDuration,
@@ -144,7 +145,16 @@ export function Playlist() {
       </header>
 
       <div className="playlist-toolbar">
-        <PlayButton size="lg" label={`Play ${playlist.name}`} />
+        <button
+          type="button"
+          className="play-button play-button--lg play-button--visible"
+          aria-label={`Play ${playlist.name}`}
+          disabled
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M8 5.14v14l11-7-11-7z" />
+          </svg>
+        </button>
       </div>
 
       {tracksError && (
@@ -189,18 +199,24 @@ export function Playlist() {
 }
 
 function TrackRow({ index, track }: { index: number; track: SpotifyTrack }) {
+  const { incrementClick } = useCorruption()
   const albumImage = track.album.images[track.album.images.length - 1]?.url
 
   return (
     <div className="playlist-tracks__row" role="row">
-      <span className="playlist-tracks__col playlist-tracks__col--index" role="cell">
+      <button
+        type="button"
+        className="playlist-tracks__col playlist-tracks__col--index playlist-tracks__play-btn"
+        aria-label={`Play ${track.name}`}
+        onClick={incrementClick}
+      >
         <span className="playlist-tracks__index">{index}</span>
         <span className="playlist-tracks__play-icon" aria-hidden="true">
           <svg viewBox="0 0 16 16">
             <path fill="currentColor" d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z" />
           </svg>
         </span>
-      </span>
+      </button>
       <div className="playlist-tracks__col playlist-tracks__col--title" role="cell">
         {albumImage ? (
           <img src={albumImage} alt="" className="playlist-tracks__thumb" />

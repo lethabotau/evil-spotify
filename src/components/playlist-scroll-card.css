@@ -2,7 +2,16 @@
   flex: 0 0 auto;
   width: 180px;
   color: inherit;
+}
+
+.playlist-scroll-card__cover-link,
+.playlist-scroll-card__meta {
+  color: inherit;
   text-decoration: none;
+}
+
+.playlist-scroll-card__meta {
+  display: block;
 }
 
 .playlist-scroll-card__media {

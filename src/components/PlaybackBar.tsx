@@ -1,13 +1,133 @@
+import { useEffect, useRef, useState } from 'react'
+import corruptedAudio from '../assets/slimey_modded.mp3'
+import { useCorruption } from '../context/CorruptionContext'
+import { formatArtistNames, formatDuration } from '../utils/format'
+import { getAccessToken } from '../utils/spotifyAuth'
+import { getRecentlyPlayedTracks, type SpotifyTrack } from '../utils/spotify'
 import './playback-bar.css'
 
+const CORRUPTED_TRACK_TITLE = '2Slimey - Roc (Bass Boosted 🔊)'
+
+function formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
+  return formatDuration(seconds * 1000)
+}
+
 export function PlaybackBar() {
+  const { isCorrupted, clickCount } = useCorruption()
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [recentTrack, setRecentTrack] = useState<SpotifyTrack | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+
+  useEffect(() => {
+    if (!getAccessToken()) return
+
+    let cancelled = false
+
+    getRecentlyPlayedTracks(1)
+      .then((data) => {
+        if (cancelled) return
+        const track = data.items[0]?.track ?? null
+        setRecentTrack(track)
+        if (track) {
+          setDuration(track.duration_ms / 1000)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isCorrupted) return
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = 0
+    audio.play().catch(() => {})
+  }, [isCorrupted, clickCount])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
+    const onLoadedMetadata = () => setDuration(audio.duration)
+    const onEnded = () => {
+      setIsPlaying(false)
+      setCurrentTime(0)
+    }
+    const onPlay = () => setIsPlaying(true)
+    const onPause = () => setIsPlaying(false)
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('durationchange', onLoadedMetadata)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('pause', onPause)
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('durationchange', onLoadedMetadata)
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
+    }
+  }, [])
+
+  function handlePlayPause() {
+    if (!isCorrupted) return
+
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (audio.paused) {
+      audio.play().catch(() => {})
+    } else {
+      audio.pause()
+    }
+  }
+
+  const recentImage = recentTrack?.album.images[0]?.url
+  const idleTitle = recentTrack?.name ?? 'Choose a song'
+  const idleArtist = recentTrack ? formatArtistNames(recentTrack.artists) : '—'
+
+  const title = isCorrupted ? CORRUPTED_TRACK_TITLE : idleTitle
+  const artist = isCorrupted ? '' : idleArtist
+
+  const progressPercent = isCorrupted
+    ? duration > 0
+      ? (currentTime / duration) * 100
+      : 0
+    : 0
+
+  const elapsed = isCorrupted ? formatTime(currentTime) : '0:00'
+  const total = isCorrupted
+    ? formatTime(duration)
+    : recentTrack
+      ? formatTime(recentTrack.duration_ms / 1000)
+      : '0:00'
+
   return (
     <footer className="playback-bar" aria-label="Player">
+      <audio ref={audioRef} src={corruptedAudio} preload="metadata" />
+
       <div className="playback-bar__now-playing">
-        <div className="playback-bar__art playback-bar__art--empty" />
+        {recentImage && !isCorrupted ? (
+          <img src={recentImage} alt="" className="playback-bar__art" />
+        ) : (
+          <div
+            className={`playback-bar__art${isCorrupted ? ' playback-bar__art--active' : ' playback-bar__art--empty'}`}
+          />
+        )}
         <div className="playback-bar__track">
-          <span className="playback-bar__title">Not playing</span>
-          <span className="playback-bar__artist">—</span>
+          <span className="playback-bar__title">{title}</span>
+          {artist && <span className="playback-bar__artist">{artist}</span>}
         </div>
       </div>
 
@@ -32,15 +152,25 @@ export function PlaybackBar() {
           <button
             type="button"
             className="playback-bar__btn playback-bar__btn--play"
-            aria-label="Play"
-            disabled
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+            onClick={handlePlayPause}
+            disabled={!isCorrupted}
           >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"
-              />
-            </svg>
+            {isPlaying ? (
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z"
+                />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"
+                />
+              </svg>
+            )}
           </button>
           <button type="button" className="playback-bar__btn" aria-label="Next" disabled>
             <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -60,11 +190,14 @@ export function PlaybackBar() {
           </button>
         </div>
         <div className="playback-bar__progress">
-          <span className="playback-bar__time">0:00</span>
+          <span className="playback-bar__time">{elapsed}</span>
           <div className="playback-bar__progress-track">
-            <div className="playback-bar__progress-fill" style={{ width: '0%' }} />
+            <div
+              className="playback-bar__progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
-          <span className="playback-bar__time">0:00</span>
+          <span className="playback-bar__time">{total}</span>
         </div>
       </div>
 
