@@ -1,46 +1,32 @@
-import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useCorruption } from '../context/CorruptionContext'
+import { useCorruptionGlitchParams } from '../hooks/useCorruptionGlitchParams'
+import { corruptionGlitchStyleProperties } from '../utils/corruptionRamp'
 import './corruption-effects.css'
 
-const SHAKE_INTERVAL_MS = 4500
-const SHAKE_DURATION_MS = 380
-
-export function useCorruptionShakeClass(): string {
+export function useCorruptionGlitchStyles(): CSSProperties | undefined {
   const { isCorrupted } = useCorruption()
-  const [shaking, setShaking] = useState(false)
+  const params = useCorruptionGlitchParams()
 
-  useEffect(() => {
-    if (!isCorrupted) {
-      setShaking(false)
-      return
-    }
+  if (!isCorrupted) return undefined
 
-    let shakeTimeout: ReturnType<typeof setTimeout> | undefined
-
-    const intervalId = window.setInterval(() => {
-      setShaking(true)
-      shakeTimeout = window.setTimeout(() => setShaking(false), SHAKE_DURATION_MS)
-    }, SHAKE_INTERVAL_MS)
-
-    return () => {
-      window.clearInterval(intervalId)
-      if (shakeTimeout !== undefined) window.clearTimeout(shakeTimeout)
-    }
-  }, [isCorrupted])
-
-  if (!isCorrupted) return ''
-  return shaking ? ' app-layout--shake' : ''
+  return corruptionGlitchStyleProperties(params) as CSSProperties
 }
 
 export function CorruptionEffectsOverlay() {
   const { isCorrupted } = useCorruption()
+  const params = useCorruptionGlitchParams()
+
   if (!isCorrupted) return null
 
+  const layerStyle = corruptionGlitchStyleProperties(params) as CSSProperties
+
   return (
-    <div className="corruption-fx-layer" aria-hidden>
+    <div className="corruption-fx-layer" style={layerStyle} aria-hidden>
       <div className="corruption-fx corruption-fx--scanlines" />
       <div className="corruption-fx corruption-fx--noise" />
-      <div className="corruption-fx corruption-fx--rgb" />
+      <div className="corruption-fx corruption-fx--rgb-ramp" />
+      <div className="corruption-fx corruption-fx--vignette" />
     </div>
   )
 }

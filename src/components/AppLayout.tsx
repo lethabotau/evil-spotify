@@ -2,19 +2,20 @@ import { Outlet } from 'react-router-dom'
 import { useCorruption } from '../context/CorruptionContext'
 import {
   CorruptionEffectsOverlay,
-  useCorruptionShakeClass,
+  useCorruptionGlitchStyles,
 } from './CorruptionEffects'
-import { PlaybackBar } from './PlaybackBar'
-import { Sidebar } from './Sidebar'
+import { PlaybackBar } from './PlaybackBar.tsx'
+import { Sidebar } from './Sidebar.tsx'
 import './app-layout.css'
 
 export function AppLayout() {
   const { isCorrupted } = useCorruption()
-  const shakeClass = useCorruptionShakeClass()
+  const glitchStyles = useCorruptionGlitchStyles()
 
   return (
     <div
-      className={`app-layout${isCorrupted ? ' app-layout--corrupted' : ''}${shakeClass}`}
+      className={`app-layout${isCorrupted ? ' app-layout--corrupted' : ''}`}
+      style={glitchStyles}
     >
       <CorruptionEffectsOverlay />
       <Sidebar />
