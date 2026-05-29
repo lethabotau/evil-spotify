@@ -31,6 +31,7 @@ spotify.interceptors.response.use(
       !isUnauthorizedLogoutInProgress
     ) {
       isUnauthorizedLogoutInProgress = true
+      clearSpotifyCache()
       logoutDueToUnauthorized()
       return Promise.reject(new SpotifySessionExpiredError())
     }
@@ -40,6 +41,47 @@ spotify.interceptors.response.use(
 
 export function isSessionExpiredError(err: unknown): err is SpotifySessionExpiredError {
   return err instanceof SpotifySessionExpiredError
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000
+
+interface CacheEntry<T> {
+  value: T
+  expiresAt: number
+}
+
+const responseCache = new Map<string, CacheEntry<unknown>>()
+const inflightRequests = new Map<string, Promise<unknown>>()
+
+/** In-memory cache (5 min) + in-flight deduplication for identical keys */
+function cachedRequest<T>(key: string, request: () => Promise<T>): Promise<T> {
+  const now = Date.now()
+  const cached = responseCache.get(key) as CacheEntry<T> | undefined
+  if (cached && cached.expiresAt > now) {
+    return Promise.resolve(cached.value)
+  }
+
+  const inflight = inflightRequests.get(key) as Promise<T> | undefined
+  if (inflight) return inflight
+
+  const promise = request()
+    .then((value) => {
+      responseCache.set(key, { value, expiresAt: now + CACHE_TTL_MS })
+      inflightRequests.delete(key)
+      return value
+    })
+    .catch((err) => {
+      inflightRequests.delete(key)
+      throw err
+    })
+
+  inflightRequests.set(key, promise)
+  return promise
+}
+
+export function clearSpotifyCache(): void {
+  responseCache.clear()
+  inflightRequests.clear()
 }
 
 // --- Shared ---
@@ -241,32 +283,41 @@ export function getSpotifyErrorMessage(err: unknown): string {
   if (err.response?.status === 403) {
     return 'Tracks are only available for playlists you own or collaborate on. Spotify no longer allows loading tracks for other users’ playlists.'
   }
+  if (err.response?.status === 429) {
+    return 'Spotify rate limit reached. Wait a minute and refresh.'
+  }
   const data = err.response?.data as { error?: { message?: string } } | undefined
-  return data?.error?.message ?? err.message
+  return data?.error?.message ?? 'Something went wrong loading from Spotify.'
 }
 
 // --- API ---
 
 export async function getCurrentUserProfile(): Promise<SpotifyUser> {
-  const { data } = await spotify.get<SpotifyUser>('/me')
-  return data
+  return cachedRequest('user-profile', async () => {
+    const { data } = await spotify.get<SpotifyUser>('/me')
+    return data
+  })
 }
 
 export async function getRecentlyPlayedTracks(
   limit = 20,
 ): Promise<SpotifyRecentlyPlayedResponse> {
-  const { data } = await spotify.get<SpotifyRecentlyPlayedResponse>(
-    '/me/player/recently-played',
-    { params: { limit } },
-  )
-  return data
+  return cachedRequest(`recently-played:${limit}`, async () => {
+    const { data } = await spotify.get<SpotifyRecentlyPlayedResponse>(
+      '/me/player/recently-played',
+      { params: { limit } },
+    )
+    return data
+  })
 }
 
 export async function getUserPlaylists(limit = 10): Promise<SpotifyUserPlaylistsResponse> {
-  const { data } = await spotify.get<SpotifyUserPlaylistsResponse>('/me/playlists', {
-    params: { limit },
+  return cachedRequest(`playlists:${limit}`, async () => {
+    const { data } = await spotify.get<SpotifyUserPlaylistsResponse>('/me/playlists', {
+      params: { limit },
+    })
+    return data
   })
-  return data
 }
 
 export async function getLikedSongs(limit = 20): Promise<SpotifySavedTracksResponse> {
@@ -286,31 +337,35 @@ export async function getPlaylistTracks(
   limit = 50,
   offset = 0,
 ): Promise<SpotifyPlaylistTracksResponse> {
-  const { data } = await spotify.get<SpotifyPaging<SpotifyPlaylistItemApi>>(
-    `/playlists/${playlistId}/items`,
-    { params: { limit, offset, additional_types: 'track' } },
-  )
-  return {
-    ...data,
-    items: data.items.map(normalizePlaylistItem),
-  }
+  return cachedRequest(`playlist-tracks:${playlistId}:${limit}:${offset}`, async () => {
+    const { data } = await spotify.get<SpotifyPaging<SpotifyPlaylistItemApi>>(
+      `/playlists/${playlistId}/items`,
+      { params: { limit, offset, additional_types: 'track' } },
+    )
+    return {
+      ...data,
+      items: data.items.map(normalizePlaylistItem),
+    }
+  })
 }
 
 export async function getAllPlaylistTracks(
   playlistId: string,
 ): Promise<SpotifyPlaylistTrackItem[]> {
-  const items: SpotifyPlaylistTrackItem[] = []
-  const limit = 50
-  let offset = 0
+  return cachedRequest(`playlist-tracks-all:${playlistId}`, async () => {
+    const items: SpotifyPlaylistTrackItem[] = []
+    const limit = 50
+    let offset = 0
 
-  while (true) {
-    const page = await getPlaylistTracks(playlistId, limit, offset)
-    items.push(...page.items)
-    if (!page.next) break
-    offset += limit
-  }
+    while (true) {
+      const page = await getPlaylistTracks(playlistId, limit, offset)
+      items.push(...page.items)
+      if (!page.next) break
+      offset += limit
+    }
 
-  return items
+    return items
+  })
 }
 
 export interface SpotifyAlbumTrackSimplified {

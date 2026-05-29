@@ -19,17 +19,47 @@ export function Home() {
   useEffect(() => {
     let cancelled = false
 
-    Promise.all([getRecentlyPlayedTracks(50), getUserPlaylists(50)])
-      .then(([recent, playlistData]) => {
-        if (cancelled) return
-        setGridItems(buildRecentGridItems(recent, playlistData.items))
-        setPlaylists(playlistData.items)
+    async function load() {
+      const [recentResult, playlistsResult] = await Promise.allSettled([
+        getRecentlyPlayedTracks(20),
+        getUserPlaylists(50),
+      ])
+
+      if (cancelled) return
+
+      const errors: string[] = []
+
+      if (recentResult.status === 'fulfilled' && playlistsResult.status === 'fulfilled') {
+        setGridItems(buildRecentGridItems(recentResult.value, playlistsResult.value.items))
+        setPlaylists(playlistsResult.value.items)
         setError(null)
-      })
+        return
+      }
+
+      if (playlistsResult.status === 'fulfilled') {
+        setPlaylists(playlistsResult.value.items)
+        setGridItems([])
+      }
+
+      if (recentResult.status === 'rejected') {
+        const message = getSpotifyErrorMessage(recentResult.reason)
+        if (message) errors.push(message)
+      }
+
+      if (playlistsResult.status === 'rejected') {
+        const message = getSpotifyErrorMessage(playlistsResult.reason)
+        if (message && !errors.includes(message)) errors.push(message)
+      }
+
+      setError(errors.length > 0 ? errors[0] : null)
+    }
+
+    load()
       .catch((err: unknown) => {
-        if (cancelled) return
-        const message = getSpotifyErrorMessage(err)
-        if (message) setError(message)
+        if (!cancelled) {
+          const message = getSpotifyErrorMessage(err)
+          if (message) setError(message)
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -40,29 +70,35 @@ export function Home() {
     }
   }, [])
 
+  const hasContent = gridItems.length > 0 || playlists.length > 0
+
   return (
     <div className="home">
       {loading && <p className="home__status">Loading…</p>}
       {error && <p className="home__status home__status--error">{error}</p>}
 
-      {!loading && !error && (
+      {!loading && (hasContent || !error) && (
         <>
-          <section className="home__grid-section" aria-label="Recently played">
-            <div className="home__grid">
-              {gridItems.map((item) => (
-                <HomeGridCard key={item.id} item={item} />
-              ))}
-            </div>
-          </section>
+          {gridItems.length > 0 && (
+            <section className="home__grid-section" aria-label="Recently played">
+              <div className="home__grid">
+                {gridItems.map((item) => (
+                  <HomeGridCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          )}
 
-          <section className="home__playlists-section" aria-label="Your playlists">
-            <h2 className="home__section-title">Your Playlists</h2>
-            <div className="home__playlist-scroll">
-              {playlists.map((playlist) => (
-                <PlaylistScrollCard key={playlist.id} playlist={playlist} />
-              ))}
-            </div>
-          </section>
+          {playlists.length > 0 && (
+            <section className="home__playlists-section" aria-label="Your playlists">
+              <h2 className="home__section-title">Your Playlists</h2>
+              <div className="home__playlist-scroll">
+                {playlists.map((playlist) => (
+                  <PlaylistScrollCard key={playlist.id} playlist={playlist} />
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </div>
