@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { AuthGuard } from './components/AuthGuard'
+import { OAuthCallbackHandler } from './components/OAuthCallbackHandler'
 import { About } from './pages/About'
 import { Album } from './pages/Album'
 import { Artist } from './pages/Artist'
@@ -10,7 +11,9 @@ import { Login } from './pages/Login'
 import { Playlist } from './pages/Playlist'
 function App() {
   return (
-    <Routes>
+    <>
+      <OAuthCallbackHandler />
+      <Routes>
       <Route path="login" element={<Login />} />
       <Route path="callback" element={<Callback />} />
       <Route element={<AuthGuard />}>
@@ -22,7 +25,8 @@ function App() {
           <Route path="about" element={<About />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </>
   )
 }
 

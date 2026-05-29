@@ -4,6 +4,7 @@ import { PlaylistScrollCard } from '../components/PlaylistScrollCard'
 import { buildRecentGridItems, type HomeGridItem } from '../utils/homeData'
 import {
   getRecentlyPlayedTracks,
+  getSpotifyErrorMessage,
   getUserPlaylists,
   type SpotifyPlaylist,
 } from '../utils/spotify'
@@ -27,7 +28,8 @@ export function Home() {
       })
       .catch((err: unknown) => {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : 'Failed to load home feed')
+        const message = getSpotifyErrorMessage(err)
+        if (message) setError(message)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

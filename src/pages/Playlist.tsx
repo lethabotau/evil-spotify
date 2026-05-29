@@ -50,11 +50,13 @@ export function Playlist() {
           setTracks(trackItems.filter((item) => item.track !== null))
         } catch (trackErr) {
           if (cancelled) return
-          setTracksError(getSpotifyErrorMessage(trackErr))
+          const tracksMessage = getSpotifyErrorMessage(trackErr)
+          if (tracksMessage) setTracksError(tracksMessage)
         }
       } catch (err) {
         if (cancelled) return
-        setError(getSpotifyErrorMessage(err))
+        const message = getSpotifyErrorMessage(err)
+        if (message) setError(message)
       } finally {
         if (!cancelled) setLoading(false)
       }

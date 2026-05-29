@@ -1,20 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { completeOAuthFromUrl, hasOAuthResponseInUrl } from '../utils/spotifyAuth'
+import {
+  completeOAuthFromUrl,
+  hasOAuthResponseInUrl,
+} from '../utils/spotifyAuth'
 
-/** Fallback route for #/callback (e.g. local dev); production uses OAuthCallbackHandler */
-export function Callback() {
+/**
+ * Spotify returns ?code= on the document URL (before the hash).
+ * HashRouter does not route that to #/callback, so we handle it here.
+ */
+export function OAuthCallbackHandler() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const handled = useRef(false)
 
   useEffect(() => {
-    if (!hasOAuthResponseInUrl()) {
-      setError('Missing authorization response from Spotify')
-      return
-    }
-
-    if (handled.current) return
+    if (!hasOAuthResponseInUrl() || handled.current) return
     handled.current = true
 
     completeOAuthFromUrl()
@@ -30,17 +31,11 @@ export function Callback() {
       })
   }, [navigate])
 
-  if (error) {
-    return (
-      <section className="login">
-        <p className="login__error">{error}</p>
-      </section>
-    )
-  }
+  if (!error) return null
 
   return (
     <section className="login">
-      <p>Completing login…</p>
+      <p className="login__error">{error}</p>
     </section>
   )
 }

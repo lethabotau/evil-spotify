@@ -1,3 +1,4 @@
+import { getRedirectUri, getSpotifyClientId } from '../config/env'
 import { generateCodeChallenge, generateCodeVerifier } from './pkce'
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
@@ -27,20 +28,78 @@ export function clearAccessToken(): void {
   localStorage.removeItem(ACCESS_TOKEN_KEY)
 }
 
-function getSpotifyClientId(): string {
-  const value = import.meta.env.VITE_SPOTIFY_CLIENT_ID
-  if (!value) {
-    throw new Error('Missing VITE_SPOTIFY_CLIENT_ID in environment')
-  }
-  return value
+/** Clears session and sends user to login (HashRouter). Used on API 401. */
+export function logoutDueToUnauthorized(): void {
+  clearAccessToken()
+  localStorage.removeItem(PKCE_VERIFIER_KEY)
+  localStorage.removeItem(OAUTH_STATE_KEY)
+
+  const loginHash = '#/login'
+  if (window.location.hash === loginHash) return
+
+  window.location.replace(`${window.location.pathname}${loginHash}`)
 }
 
-function getRedirectUri(): string {
-  const value = import.meta.env.VITE_REDIRECT_URI
-  if (!value) {
-    throw new Error('Missing VITE_REDIRECT_URI in environment')
+/** Re-export for callers that need the exact URI sent to Spotify */
+export { getRedirectUri } from '../config/env'
+
+export function buildSpotifyAuthorizeUrl(
+  clientId: string,
+  redirectUri: string,
+  challenge: string,
+  state: string,
+): string {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: 'code',
+    redirect_uri: redirectUri,
+    scope: SPOTIFY_SCOPES,
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+    state,
+  })
+
+  return `${SPOTIFY_AUTH_URL}?${params.toString()}`
+}
+
+export function readOAuthResponseFromLocation(): {
+  code: string | null
+  state: string | null
+  error: string | null
+} {
+  const fromSearch = new URLSearchParams(window.location.search)
+  if (fromSearch.has('code') || fromSearch.has('error') || fromSearch.has('state')) {
+    return {
+      code: fromSearch.get('code'),
+      state: fromSearch.get('state'),
+      error: fromSearch.get('error'),
+    }
   }
-  return value
+
+  const hash = window.location.hash
+  const queryStart = hash.indexOf('?')
+  if (queryStart === -1) {
+    return { code: null, state: null, error: null }
+  }
+
+  const fromHash = new URLSearchParams(hash.slice(queryStart + 1))
+  return {
+    code: fromHash.get('code'),
+    state: fromHash.get('state'),
+    error: fromHash.get('error'),
+  }
+}
+
+export function hasOAuthResponseInUrl(): boolean {
+  const { code, error } = readOAuthResponseFromLocation()
+  return Boolean(code || error)
+}
+
+export function clearOAuthQueryFromUrl(): void {
+  const path = window.location.pathname
+  const hashPath = window.location.hash.split('?')[0]
+  const nextHash = hashPath && hashPath !== '#' ? hashPath : '#/'
+  window.history.replaceState(null, '', `${path}${nextHash}`)
 }
 
 export async function redirectToSpotifyLogin(): Promise<void> {
@@ -54,17 +113,13 @@ export async function redirectToSpotifyLogin(): Promise<void> {
   localStorage.setItem(PKCE_VERIFIER_KEY, verifier)
   localStorage.setItem(OAUTH_STATE_KEY, state)
 
-  const params = new URLSearchParams({
-    client_id: clientId,
-    response_type: 'code',
-    redirect_uri: redirectUri,
-    scope: SPOTIFY_SCOPES,
-    code_challenge_method: 'S256',
-    code_challenge: challenge,
-    state,
-  })
+  const authorizeUrl = buildSpotifyAuthorizeUrl(clientId, redirectUri, challenge, state)
 
-  window.location.assign(`${SPOTIFY_AUTH_URL}?${params.toString()}`)
+  if (import.meta.env.DEV) {
+    console.info('[spotify auth] redirect_uri sent to Spotify:', redirectUri)
+  }
+
+  window.location.assign(authorizeUrl)
 }
 
 export async function exchangeCodeForToken(code: string): Promise<string> {
@@ -112,4 +167,33 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
 export function validateOAuthState(state: string): boolean {
   const stored = localStorage.getItem(OAUTH_STATE_KEY)
   return stored !== null && stored === state
+}
+
+export async function completeOAuthFromUrl(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const { code, state, error: oauthError } = readOAuthResponseFromLocation()
+
+  if (oauthError) {
+    clearOAuthQueryFromUrl()
+    return { ok: false, error: oauthError }
+  }
+
+  if (!code || !state) {
+    return { ok: false, error: 'Missing authorization response from Spotify' }
+  }
+
+  if (!validateOAuthState(state)) {
+    clearOAuthQueryFromUrl()
+    return { ok: false, error: 'Invalid OAuth state' }
+  }
+
+  try {
+    await exchangeCodeForToken(code)
+    clearOAuthQueryFromUrl()
+    return { ok: true }
+  } catch (err) {
+    clearOAuthQueryFromUrl()
+    throw err
+  }
 }

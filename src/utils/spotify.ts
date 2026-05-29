@@ -1,5 +1,14 @@
 import axios from 'axios'
-import { getAccessToken } from './spotifyAuth'
+import { getAccessToken, logoutDueToUnauthorized } from './spotifyAuth'
+
+export class SpotifySessionExpiredError extends Error {
+  constructor() {
+    super('session_expired')
+    this.name = 'SpotifySessionExpiredError'
+  }
+}
+
+let isUnauthorizedLogoutInProgress = false
 
 export const spotify = axios.create({
   baseURL: 'https://api.spotify.com/v1',
@@ -12,6 +21,26 @@ spotify.interceptors.request.use((config) => {
   }
   return config
 })
+
+spotify.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !isUnauthorizedLogoutInProgress
+    ) {
+      isUnauthorizedLogoutInProgress = true
+      logoutDueToUnauthorized()
+      return Promise.reject(new SpotifySessionExpiredError())
+    }
+    return Promise.reject(error)
+  },
+)
+
+export function isSessionExpiredError(err: unknown): err is SpotifySessionExpiredError {
+  return err instanceof SpotifySessionExpiredError
+}
 
 // --- Shared ---
 
@@ -200,8 +229,14 @@ function normalizePlaylistItem(raw: SpotifyPlaylistItemApi): SpotifyPlaylistTrac
 }
 
 export function getSpotifyErrorMessage(err: unknown): string {
+  if (isSessionExpiredError(err)) {
+    return ''
+  }
   if (!axios.isAxiosError(err)) {
     return err instanceof Error ? err.message : 'Request failed'
+  }
+  if (err.response?.status === 401) {
+    return ''
   }
   if (err.response?.status === 403) {
     return 'Tracks are only available for playlists you own or collaborate on. Spotify no longer allows loading tracks for other users’ playlists.'

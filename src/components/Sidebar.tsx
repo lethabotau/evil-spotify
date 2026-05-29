@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import logo from '../assets/logo.svg'
 import { CorruptedText } from './CorruptedText'
 import { useCorruptedDisplay } from '../hooks/useCorruptedDisplay'
-import { getUserPlaylists, type SpotifyPlaylist } from '../utils/spotify'
+import { getSpotifyErrorMessage, getUserPlaylists, type SpotifyPlaylist } from '../utils/spotify'
 import './sidebar.css'
 
 function HomeIcon() {
@@ -37,7 +37,8 @@ export function Sidebar() {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load playlists')
+          const message = getSpotifyErrorMessage(err)
+          if (message) setError(message)
         }
       })
       .finally(() => {
